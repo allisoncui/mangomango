@@ -154,6 +154,50 @@ class LedgerApiTest {
   }
 
   @Test
+  void logUsageRejectsReusedKeyForDifferentCallButScopesKeysPerClient() {
+    String model = addModel("openai", "gpt", "1.00", "2.00", 128_000, 3,
+        Instant.parse("2025-01-01T00:00:00Z"));
+    Map<String, Object> call = usage("openai", model, 1_000, 100, recently(), 300, "SUCCESS", null);
+    as(client).body(call).post("/api/v1/usage").then().statusCode(201);
+
+    Map<String, Object> changed = new HashMap<>(call);
+    changed.put("inputTokens", 2_000);
+    as(client).body(changed).post("/api/v1/usage").then()
+        .statusCode(409)
+        .body("error", equalTo("conflict"))
+        .body("message", containsString((String) call.get("idempotencyKey")));
+
+    // Idempotency keys belong to one client, so another client may use the same key.
+    as("other-" + suffix).body(changed).post("/api/v1/usage").then()
+        .statusCode(201)
+        .body("replayed", equalTo(false));
+  }
+
+  @Test
+  void logUsageRejectsBlankClientAndInconsistentTokenCounts() {
+    String model = addModel("openai", "gpt", "1.00", "2.00", 128_000, 3,
+        Instant.parse("2025-01-01T00:00:00Z"));
+
+    as("   ").body(usage("openai", model, 1, 1, recently(), 1, "SUCCESS", null))
+        .post("/api/v1/usage").then()
+        .statusCode(400)
+        .body("message", containsString("X-Client-Id"));
+
+    Map<String, Object> tooManyCached = usage("openai", model, 100, 1, recently(), 1, "SUCCESS",
+        null);
+    tooManyCached.put("cachedInputTokens", 101);
+    as(client).body(tooManyCached).post("/api/v1/usage").then()
+        .statusCode(400)
+        .body("message", containsString("cachedInputTokens"));
+
+    as(client).body(usage("openai", model, 1, 1, Instant.now().plus(1, ChronoUnit.HOURS), 1,
+            "SUCCESS", null))
+        .post("/api/v1/usage").then()
+        .statusCode(400)
+        .body("message", containsString("future"));
+  }
+
+  @Test
   void budgetThresholdAlertsFireOnceAndRulesAreManageable() {
     String model = addModel("anthropic", "claude", "1.00", "1.00", 200_000, 4,
         Instant.parse("2025-01-01T00:00:00Z"));
