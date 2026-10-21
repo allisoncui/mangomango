@@ -22,12 +22,15 @@ public class UsageController {
     this.usageService = usageService;
   }
 
-  /** Records a call; returns 201 for a new record and 200 for an idempotent replay. */
+  /**
+   * Records a call; returns 201 for a new record and 200 for an idempotent replay. A blank
+   * {@code X-Client-Id} is rejected with 400 so usage is never stored under an empty client.
+   */
   @PostMapping
   public ResponseEntity<LogUsageResponse> log(
       @RequestHeader(ClientHeader.NAME) String clientId,
       @Valid @RequestBody LogUsageRequest request) {
-    LogUsageResponse response = usageService.log(clientId, request);
+    LogUsageResponse response = usageService.log(ClientHeader.require(clientId), request);
     return ResponseEntity.status(response.replayed() ? HttpStatus.OK : HttpStatus.CREATED)
         .body(response);
   }

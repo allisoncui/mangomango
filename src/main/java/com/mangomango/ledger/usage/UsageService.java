@@ -6,6 +6,7 @@ import com.mangomango.ledger.catalog.CatalogService;
 import com.mangomango.ledger.catalog.CostCalculator;
 import com.mangomango.ledger.catalog.ModelKey;
 import com.mangomango.ledger.catalog.ModelPrice;
+import com.mangomango.ledger.common.ConflictException;
 import com.mangomango.ledger.common.ValidationException;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -42,7 +43,9 @@ public class UsageService {
 
   /**
    * Prices and records one call, or returns the original record if the idempotency key was
-   * already used by this client.
+   * already used by this client for the same call.
+   *
+   * @throws ConflictException if the idempotency key was already used for a different call
    */
   @Transactional
   public LogUsageResponse log(String clientId, LogUsageRequest request) {
@@ -50,10 +53,16 @@ public class UsageService {
         repository.findByClientIdAndIdempotencyKey(clientId, request.idempotencyKey());
     if (existing.isPresent()) {
       UsageEvent original = existing.get();
+      // A reused key with different billable fields is a client bug, not a retry; replaying
+      // the original would silently drop the new call.
+      if (!describesSameCall(original, request)) {
+        throw new ConflictException("idempotencyKey '" + request.idempotencyKey()
+            + "' was already used for a different call");
+      }
       return response(original, true, budgetService.statusesFor(original));
     }
 
-    long cached = request.cachedInputTokens() == null ? 0 : request.cachedInputTokens();
+    long cached = cachedTokens(request);
     if (cached > request.inputTokens()) {
       throw new ValidationException("cachedInputTokens cannot exceed inputTokens");
     }
@@ -98,6 +107,25 @@ public class UsageService {
         budgets,
         budgets.stream().anyMatch(BudgetStatus::anyThresholdCrossed),
         budgets.stream().anyMatch(b -> !b.newlyCrossedThresholds().isEmpty()));
+  }
+
+  /**
+   * True when a retried request reports the same call as the stored record. Only the fields that
+   * determine cost are compared; latency, status and project tag may legitimately differ when a
+   * client re-sends a report.
+   */
+  private static boolean describesSameCall(UsageEvent event, LogUsageRequest request) {
+    ModelKey key = ModelKey.of(request.provider(), request.modelId());
+    return event.getProvider().equals(key.provider())
+        && event.getModelId().equals(key.modelId())
+        && event.getInputTokens() == request.inputTokens()
+        && event.getOutputTokens() == request.outputTokens()
+        && event.getCachedInputTokens() == cachedTokens(request)
+        && event.getRequestTimestamp().equals(request.requestTimestamp());
+  }
+
+  private static long cachedTokens(LogUsageRequest request) {
+    return request.cachedInputTokens() == null ? 0 : request.cachedInputTokens();
   }
 
   private static String blankToNull(String value) {

@@ -35,6 +35,12 @@ public class GlobalExceptionHandler {
     return build(HttpStatus.FORBIDDEN, "forbidden", ex.getMessage(), List.of());
   }
 
+  /** Requests that contradict state the service already stored. */
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ErrorResponse> handleStateConflict(ConflictException ex) {
+    return build(HttpStatus.CONFLICT, "conflict", ex.getMessage(), List.of());
+  }
+
   /** Reports every invalid field in a request body. */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleInvalidBody(MethodArgumentNotValidException ex) {
