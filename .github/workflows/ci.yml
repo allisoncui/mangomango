@@ -22,3 +22,23 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco
+
+  usage-cli:
+    name: usage-cli client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # The CLI client is its own Maven project; it talks to the service over HTTP
+      # only, so it builds and tests without one running.
+      - run: mvn -B verify
+        working-directory: clients/usage-cli
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report-usage-cli
+          path: clients/usage-cli/target/site/jacoco

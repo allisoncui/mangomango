@@ -117,6 +117,20 @@ each alternative using the price in effect at each call's timestamp. Excludes al
 context window is below the largest recorded call or whose tier is below the highest tier used.
 Returns actual cost, projected cost, savings ($ and %), recorded average latency, and exclusions.
 
+## Client applications
+
+Separate programs that use the service over HTTP. Each is built on its own.
+
+| Client | Directory | What it does |
+|---|---|---|
+| Usage reporter (CLI) | [`clients/usage-cli`](clients/usage-cli) | Read-only. Prints a month of recorded tokens, cost and cost per model for a client, from operation 2. |
+| Cost-controlled agent | *not built yet* | Calls operation 3 before each LLM call and operation 1 after, and downgrades or falls back when a budget is breached. |
+
+```bash
+cd clients/usage-cli && mvn verify
+java -jar target/usage-cli.jar --client-id acme --month 2026-10 --project chatbot
+```
+
 ## Project layout
 
 ```
@@ -128,4 +142,5 @@ src/main/java/com/mangomango/ledger/
   budget/          Op 4 + threshold alerts and webhooks
   savings/         Op 6
   common/          config, errors, client header
+clients/usage-cli/ terminal usage reporter (its own Maven project)
 ```
