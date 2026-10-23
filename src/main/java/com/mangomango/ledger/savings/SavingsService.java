@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.savings;
 
 import com.mangomango.ledger.catalog.CatalogService;

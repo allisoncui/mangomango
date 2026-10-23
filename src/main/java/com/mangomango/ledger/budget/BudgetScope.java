@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.budget;
 
 /** What spending a budget rule counts. */

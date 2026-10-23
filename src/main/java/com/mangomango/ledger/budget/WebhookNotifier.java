@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.budget;
 
 /** Delivers budget alerts to client callback URLs. */

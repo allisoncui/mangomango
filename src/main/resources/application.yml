@@ -1,3 +1,4 @@
+# Generated using Claude Code.
 spring:
   application:
     name: mangomango-ledger

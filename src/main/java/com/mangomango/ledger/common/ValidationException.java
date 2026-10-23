@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.common;
 
 /** Thrown when a request is well-formed JSON but violates a business rule. */

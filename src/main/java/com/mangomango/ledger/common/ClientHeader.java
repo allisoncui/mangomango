@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.common;
 
 /** Constants and checks for identifying the calling client program. */

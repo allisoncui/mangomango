@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.common;
 
 /** Thrown when a requested resource does not exist for the calling client. */

@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.catalog;
 
 import com.mangomango.ledger.common.ForbiddenException;

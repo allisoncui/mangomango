@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.cli;
 
 /** An error reported to the user as a plain message rather than a stack trace. */

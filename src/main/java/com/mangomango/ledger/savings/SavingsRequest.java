@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.savings;
 
 import jakarta.validation.Valid;
