@@ -1,3 +1,4 @@
+# Generated using Claude Code.
 services:
   postgres:
     image: postgres:16

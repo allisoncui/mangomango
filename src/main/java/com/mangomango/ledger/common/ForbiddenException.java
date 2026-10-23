@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.common;
 
 /** Thrown when a client calls an operation it is not permitted to perform. */

@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger;
 
 import org.springframework.boot.SpringApplication;

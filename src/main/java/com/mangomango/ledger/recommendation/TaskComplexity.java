@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.recommendation;
 
 /** Coarse task difficulty, mapped to a minimum catalog capability tier. */

@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.catalog;
 
 import java.math.BigDecimal;

@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.recommendation;
 
 import com.mangomango.ledger.common.ClientHeader;

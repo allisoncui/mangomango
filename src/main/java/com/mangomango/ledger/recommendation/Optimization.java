@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.recommendation;
 
 /** What the caller wants the recommendation to favor. */

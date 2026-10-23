@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.common;
 
 /** Thrown when a request conflicts with state the service has already stored. */

@@ -1,3 +1,5 @@
+// Generated using Claude Code.
+
 package com.mangomango.ledger.budget;
 
 import org.springframework.scheduling.annotation.Async;
