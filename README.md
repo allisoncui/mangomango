@@ -145,6 +145,12 @@ src/main/java/com/mangomango/ledger/
 clients/usage-cli/ terminal usage reporter (its own Maven project)
 ```
 
+## Third-party code
+
+This repository contains no third-party source code; all code was written for this project.
+External libraries (e.g. Spring Boot, JUnit) are fetched by Maven at build time from the
+dependencies declared in `pom.xml` and `clients/usage-cli/pom.xml`.
+
 ## AI usage
 
 For this project, we used Claude Code to assist with code generation and troubleshooting.
