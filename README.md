@@ -7,12 +7,16 @@ request's timestamp, stores it, enforces budgets across providers, and serves me
 recommendations and cost-savings analyses computed from its own stored data. It never calls AI
 providers itself.
 
-## Running
+## Build, run and test
 
-Requires Java 21 and Maven.
+Requires Java 21 and Maven. All build, run and test configuration is in the repository:
+[`pom.xml`](pom.xml), [`src/main/resources/application.yml`](src/main/resources/application.yml),
+[`docker-compose.yml`](docker-compose.yml) and [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ```bash
 mvn verify                      # Checkstyle, unit + API tests, JaCoCo report, PMD
+mvn test                        # unit + API tests only
+mvn test -Dtest=UsageServiceTest   # one test class
 mvn spring-boot:run             # starts on :8080 with in-memory H2 and a sample catalog
 ```
 
@@ -23,9 +27,30 @@ docker compose up -d
 mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
-The JaCoCo report is written to `target/site/jacoco/index.html`.
+### Testing
+
+| What | Tool | Where |
+|---|---|---|
+| Unit tests | JUnit 5, AssertJ | `src/test/java/com/mangomango/ledger/<package>/*Test.java` |
+| Mocking | Mockito (`@Mock`, Spring `@MockitoBean`) | Repositories, `CatalogService`, `BudgetService` and the webhook sender are mocked; clocks are fixed with `Clock.fixed` |
+| API tests | REST Assured against the running app on a random port with H2 | [`LedgerApiTest.java`](src/test/java/com/mangomango/ledger/LedgerApiTest.java) |
+| Coverage | JaCoCo | Report at `target/site/jacoco/index.html` after `mvn verify` |
+
+All test dependencies and plugins are configured in [`pom.xml`](pom.xml). The CLI client has its
+own tests; see [`clients/usage-cli`](clients/usage-cli).
+
+### Style checking and static analysis
+
+- **Checkstyle** with the **Google Java Style** ruleset (`google_checks.xml`, bundled with
+  Checkstyle), configured in [`pom.xml`](pom.xml). It checks main and test code, and any warning
+  fails the build.
+- **PMD** with its default Maven ruleset, run during `mvn verify`.
+- Both run in CI on every pull request.
 
 ## API
+
+The full specification (field types and ranges, every status code, side effects, call order and
+test cases) is in [`SPEC.md`](SPEC.md). This section is a quick reference.
 
 Every request identifies the calling program with an `X-Client-Id` header. Client IDs listed in
 `ledger.admin-clients` (default: `admin`) may write to the catalog. Timestamps are ISO-8601 UTC;
@@ -53,8 +78,11 @@ curl -X POST localhost:8080/api/v1/usage -H 'X-Client-Id: demo' -H 'Content-Type
 `inputTokens` includes `cachedInputTokens`. Returns `201` with `recordId`, `cost`,
 `pricingVersion`, the status of every applicable budget (`remaining`, `percentUsed`,
 `crossedThresholds`, `newlyCrossedThresholds`), `budgetThresholdBreached` and `alertTriggered`.
-Re-sending the same `idempotencyKey` returns `200` with the original record and `replayed: true`.
-An unknown model or invalid payload returns `400`.
+Re-sending the same `idempotencyKey` for the same call returns `200` with the original record and
+`replayed: true`; reusing it for a different call (different model, token counts or timestamp)
+returns `409`. Keys are scoped per client. An unknown model, invalid payload, blank `X-Client-Id`,
+`cachedInputTokens` greater than `inputTokens`, or a timestamp more than 5 minutes in the future
+returns `400`.
 
 ### 2. Usage Metrics
 
@@ -116,6 +144,108 @@ Omit `alternatives` to compare every catalog model. Re-prices the recorded token
 each alternative using the price in effect at each call's timestamp. Excludes alternatives whose
 context window is below the largest recorded call or whose tier is below the highest tier used.
 Returns actual cost, projected cost, savings ($ and %), recorded average latency, and exclusions.
+
+### Status codes
+
+| Code | Meaning |
+|---|---|
+| `200` | Success (reads, updates, idempotent replay) |
+| `201` | Created (new usage record, budget rule or catalog version) |
+| `204` | Budget rule deleted |
+| `400` | `validation_error` (invalid field or business rule) or `malformed_request` (bad JSON, missing header or parameter, wrong type) |
+| `403` | Non-admin client writing to the catalog |
+| `404` | Model or budget rule not found for this client |
+| `409` | Idempotency key reused for a different call, or concurrent duplicate reports |
+
+Errors return `{"error": ..., "message": ..., "details": [...]}`. Per-endpoint codes are in
+[`SPEC.md`](SPEC.md) section 5.
+
+### Call order
+
+1. A model must be in the catalog, with a price in effect at the call's timestamp, before usage for
+   it can be logged.
+2. Usage must be logged before metrics, savings or recommendation history reflect it.
+3. A budget rule must exist before a usage report can trigger its alert. Alerts are evaluated only
+   when usage is logged, not when a rule is created or updated.
+4. Changing a catalog price never re-prices calls already logged.
+
+## Usage scenarios
+
+Start the service with `mvn spring-boot:run` (sample catalog loaded), then:
+
+```bash
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+MONTH=$(date -u +%Y-%m-01T00:00:00Z)
+END=$(date -u -v+1d +%Y-%m-%dT00:00:00Z)   # Linux: date -u -d tomorrow +%Y-%m-%dT00:00:00Z
+api() { curl -s -H 'X-Client-Id: demo' -H 'Content-Type: application/json' "$@"; }
+```
+
+### Scenario 1: track spending against a budget
+
+1. Create a $1 monthly budget with alerts at 50%, 80% and 100%:
+   ```bash
+   api -X POST localhost:8080/api/v1/budgets \
+     -d '{"scope":"CLIENT","period":"MONTHLY","limitAmount":1.00,"thresholds":[50,80,100]}'
+   ```
+   `201`, `currentSpend: 0`.
+2. Report a call (100k input and 20k output tokens on gpt-4o):
+   ```bash
+   api -X POST localhost:8080/api/v1/usage -d '{"provider":"openai","modelId":"gpt-4o",
+     "inputTokens":100000,"outputTokens":20000,"idempotencyKey":"req-1",
+     "requestTimestamp":"'$NOW'","latencyMs":850,"status":"SUCCESS","projectTag":"bot"}'
+   ```
+   `201`, `cost: 0.45`, budget at 45%, `alertTriggered: false`.
+3. Report a second call with `"idempotencyKey":"req-2"` and the same body: `201`, budget at 90%,
+   `newlyCrossedThresholds: [50, 80]`, `alertTriggered: true`.
+4. Check the month's spending:
+   ```bash
+   api "localhost:8080/api/v1/usage/metrics?start=$MONTH&end=$END&groupBy=MODEL"
+   ```
+   `requestCount: 2`, `totalCost: 0.90`.
+
+### Scenario 2: choose a cheaper model
+
+1. Ask for the cheapest model for a medium-complexity task:
+   ```bash
+   api -X POST localhost:8080/api/v1/recommendations \
+     -d '{"estimatedPromptTokens":3000,"taskComplexity":"MEDIUM","optimizeFor":"LOWEST_COST"}'
+   ```
+   Returns the recommended model, a fallback from another provider, and the tier-2 models excluded
+   with reasons. After Scenario 1 the budget is past 50%, so `budgetPressure` is `true`.
+2. See what this month's usage would have cost on other models:
+   ```bash
+   api -X POST localhost:8080/api/v1/savings/analysis -d '{"start":"'$MONTH'","end":"'$END'"}'
+   ```
+
+### Scenario 3: update a price (admin)
+
+1. Add a new gpt-4o price effective now:
+   ```bash
+   curl -s -X POST localhost:8080/api/v1/catalog -H 'X-Client-Id: admin' -H 'Content-Type: application/json' \
+     -d '{"provider":"openai","modelId":"gpt-4o","inputPricePerMillion":2.00,"outputPricePerMillion":8.00,
+          "contextWindow":128000,"capabilityTier":4}'
+   ```
+   `201` with `stored.version: 2`.
+2. `GET /api/v1/catalog/openai/gpt-4o/history` lists versions 1 and 2. Calls logged earlier keep
+   their original cost; new calls are priced at version 2.
+
+## Bad usage examples
+
+Each of these is rejected or behaves differently than a careless client might expect.
+
+| Attempt | Result | Why |
+|---|---|---|
+| Log usage for `"modelId":"gpt-5"` (not in the catalog) | `400` "not in the catalog" | Every call must be priced from the catalog; add the model first (call order 1). |
+| Re-send `req-1` with different `inputTokens` | `409` | Silently replaying the original would drop the new call from the ledger. |
+| Report a call with `requestTimestamp` an hour from now | `400` | Timestamps more than 5 minutes ahead are treated as client clock errors. |
+| Report `cachedInputTokens: 500` with `inputTokens: 100` | `400` | Cached tokens are a part of input tokens and cannot exceed them. |
+| Send `X-Client-Id: "  "`, or omit the header | `400` | Usage must belong to an identifiable client. |
+| `POST /api/v1/catalog` as client `demo` | `403` | Only clients in `ledger.admin-clients` can change prices. |
+| Create a `CLIENT` budget with `"scopeValue":"bot"`, or a `PROJECT` budget without one | `400` | `scopeValue` must be absent for client-wide rules and present for project and provider rules. |
+| Create a budget with `"callbackUrl":"ftp://example.com"` | `400` | Webhooks are sent only to absolute `http(s)` URLs. |
+| `GET /api/v1/budgets/{ruleId}` with another client's ID | `404` | Rules are private to the client that created them. |
+| Metrics with `start` after `end` | `400` | The range would be empty. |
+| Metrics with `end=$NOW` right after logging a call at `$NOW` | `200`, call missing | `end` is exclusive (`start <= t < end`); query up to a later time. |
 
 ## Client applications
 
