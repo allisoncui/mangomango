@@ -252,6 +252,28 @@ class SavingsServiceTest {
     }
 
     @Test
+    void callsOnModelsMissingFromTheCatalogAreLeftOut() {
+      UsageEvent legacyCall = new UsageEvent("c1", "k-legacy", "openai", "legacy",
+              100_000, 100_000, 0, new BigDecimal("5.000000"), 1,
+              CALL_TIME, 300, RequestStatus.SUCCESS, null, CALL_TIME);
+      when(usageRepository.findInRange("c1", START, END))
+              .thenReturn(List.of(usedCall(null), legacyCall));
+      when(catalogService.currentOrLatest(USED.key())).thenReturn(Optional.of(USED));
+      when(catalogService.currentOrLatest(ModelKey.of("openai", "legacy")))
+              .thenReturn(Optional.empty());
+      when(catalogService.currentOrLatest(WEAK.key())).thenReturn(Optional.of(WEAK));
+
+      SavingsResponse response = service.analyze("c1", request(null, WEAK));
+
+      assertThat(response.unknownModelsUsed()).containsExactly("openai/legacy");
+      assertThat(response.requestCount()).isEqualTo(1);
+      assertThat(response.actualCost()).isEqualByComparingTo("2.00");
+      assertThat(response.highestCapabilityTierUsed()).isEqualTo(3);
+      assertThat(response.excluded()).singleElement()
+              .satisfies(e -> assertThat(e.reason()).contains("capability tier 1 < tier used 3"));
+    }
+
+    @Test
     void noAlternativesComparesEveryActiveCatalogModel() {
       when(usageRepository.findInRange("c1", START, END)).thenReturn(List.of(usedCall(null)));
       when(catalogService.activeModels()).thenReturn(List.of(USED, CHEAPER));
