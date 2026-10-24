@@ -146,6 +146,24 @@ class SavingsServiceTest {
       assertThat(response.alternatives().get(0).projectedCost()).isEqualByComparingTo("0.50");
       assertThat(response.alternatives().get(0).requestsPricedAtCurrentRate()).isEqualTo(1);
     }
+
+    @Test
+    void repricingChargesCachedInputAtTheAlternativesCachedRate() {
+      // 200k input (100k of it cached) + 50k output, so any mixed-up argument changes the cost.
+      UsageEvent cachedCall = new UsageEvent("c1", "k-cached", "openai", "used", 200_000, 50_000,
+              100_000, new BigDecimal("1.000000"), 1, CALL_TIME, 300, RequestStatus.SUCCESS, null,
+              CALL_TIME);
+      when(usageRepository.findInRange("c1", START, END)).thenReturn(List.of(cachedCall));
+      // $3/M input, $15/M output, $0.30/M cached input.
+      ModelPrice tiered = new ModelPrice("google", "tiered", 1, new BigDecimal("3.00"),
+              new BigDecimal("15.00"), new BigDecimal("0.30"), 1_000_000, 3, LONG_AGO, LONG_AGO);
+      stubCatalog(tiered);
+
+      SavingsResponse response = service.analyze("c1", request(null, tiered));
+
+      // 100k uncached x $3/M = 0.30, 100k cached x $0.30/M = 0.03, 50k output x $15/M = 0.75.
+      assertThat(response.alternatives().get(0).projectedCost()).isEqualByComparingTo("1.08");
+    }
   }
 
   @Nested
