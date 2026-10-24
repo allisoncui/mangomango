@@ -147,6 +147,20 @@ class MetricsServiceTest {
     }
 
     @Test
+    void projectFilterIsTrimmed() {
+      UsageSummary summary = service.summarize("c1", filtered(null, null, " bot "));
+
+      assertThat(summary.totals().requestCount()).isEqualTo(2);
+    }
+
+    @Test
+    void blankProjectFilterMeansNoFilter() {
+      UsageSummary summary = service.summarize("c1", filtered(null, null, ""));
+
+      assertThat(summary.totals().requestCount()).isEqualTo(3);
+    }
+
+    @Test
     void filtersCombine() {
       UsageSummary summary = service.summarize("c1", filtered("google", null, "bot"));
 

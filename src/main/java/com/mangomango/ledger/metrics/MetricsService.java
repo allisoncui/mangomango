@@ -46,11 +46,15 @@ public class MetricsService {
     List<Instant> buckets = buckets(query);
     String provider = ModelKey.normalize(query.provider());
     String model = ModelKey.normalize(query.model());
+    String project =
+            query.project() == null || query.project().isBlank()
+                    ? null
+                    : query.project().trim();
     List<UsageEvent> events =
         repository.findInRange(clientId, query.start(), query.end()).stream()
             .filter(e -> provider == null || provider.equals(e.getProvider()))
             .filter(e -> model == null || model.equals(e.getModelId()))
-            .filter(e -> query.project() == null || query.project().equals(e.getProjectTag()))
+            .filter(e -> project == null || project.equals(e.getProjectTag()))
             .toList();
 
     return new UsageSummary(
