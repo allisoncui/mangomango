@@ -97,7 +97,11 @@ public class MetricsService {
                   s.totalTokens(),
                   s.totalCost());
             })
-        .sorted(Comparator.comparing(UsageSummary.ModelCost::totalCost).reversed())
+        .sorted(
+                Comparator.comparing(UsageSummary.ModelCost::totalCost)
+                        .reversed()
+                        .thenComparing(UsageSummary.ModelCost::provider)
+                        .thenComparing(UsageSummary.ModelCost::modelId))
         .toList();
   }
 
