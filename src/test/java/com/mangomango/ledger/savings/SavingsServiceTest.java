@@ -197,6 +197,21 @@ class SavingsServiceTest {
     }
 
     @Test
+    void keepsModelsWhoseContextWindowEqualsTheLargestRequest() {
+      // usedCall is 250k input + 250k output, so the largest request is exactly 500k tokens.
+      ModelPrice exact = price("google", "exact", "1.00", 500_000, 3);
+      stubCatalog(exact);
+
+      SavingsResponse response = service.analyze("c1", request(null, exact));
+
+      assertThat(response.largestRequestTokens()).isEqualTo(500_000);
+      assertThat(response.excluded()).isEmpty();
+      assertThat(response.alternatives())
+              .extracting(SavingsResponse.Alternative::modelId)
+              .containsExactly("exact");
+    }
+
+    @Test
     void excludesModelsNotInTheCatalog() {
       ModelKey unknown = ModelKey.of("openai", "no-such-model");
       when(catalogService.currentOrLatest(unknown)).thenReturn(Optional.empty());
