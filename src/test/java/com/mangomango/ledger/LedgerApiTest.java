@@ -328,4 +328,169 @@ class LedgerApiTest {
         .body("alternatives[1].averageLatencyMs", equalTo(100.0f))
         .body("excluded.modelId", contains(weak, small));
   }
+
+  @Test
+  void catalogListsActiveVersionsAndRejectsUnknownOrInvalidModels() {
+    String model = addModel("openai", "listed", "1.00", "2.00", 128_000, 3,
+        Instant.parse("2025-01-01T00:00:00Z"));
+    addModel("openai", "listed", "0.50", "1.00", 128_000, 3,
+        Instant.parse("2026-01-01T00:00:00Z"));
+    // A version that is not yet in effect must not replace the active one.
+    addModel("openai", "listed", "9.00", "9.00", 128_000, 3,
+        Instant.now().plus(30, ChronoUnit.DAYS));
+
+    given().get("/api/v1/catalog").then()
+        .statusCode(200)
+        .body("findAll { it.modelId == '" + model + "' }.version", contains(2));
+
+    given().get("/api/v1/catalog/openai/{m}", "missing-" + suffix).then()
+        .statusCode(404)
+        .body("error", equalTo("not_found"));
+    given().get("/api/v1/catalog/openai/{m}/history", "missing-" + suffix).then()
+        .statusCode(404)
+        .body("error", equalTo("not_found"));
+
+    as("admin").body(Map.of("provider", "openai", "modelId", "bad-" + suffix,
+            "inputPricePerMillion", -1, "outputPricePerMillion", 1, "contextWindow", 10,
+            "capabilityTier", 9))
+        .post("/api/v1/catalog").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"))
+        .body("details", notNullValue());
+  }
+
+  @Test
+  void budgetRulesCanBeListedAndUpdatedOnlyByTheirOwner() {
+    String ruleId = as(client).body(Map.of(
+            "scope", "CLIENT", "period", "MONTHLY",
+            "limitAmount", 10.00, "thresholds", List.of(80)))
+        .post("/api/v1/budgets").then()
+        .statusCode(201)
+        .extract().path("ruleId");
+    as(client).body(Map.of(
+            "scope", "PROVIDER", "scopeValue", "openai", "period", "DAILY",
+            "limitAmount", 1.00, "thresholds", List.of(50, 100)))
+        .post("/api/v1/budgets").then()
+        .statusCode(201);
+
+    as(client).get("/api/v1/budgets").then()
+        .statusCode(200)
+        .body("$", hasSize(2))
+        .body("status", contains("ok", "ok"));
+    as("someone-else").get("/api/v1/budgets").then()
+        .statusCode(200)
+        .body("$", empty());
+
+    Map<String, Object> replacement = Map.of(
+        "scope", "PROJECT", "scopeValue", "bot", "period", "WEEKLY",
+        "limitAmount", 2.50, "thresholds", List.of(25, 75));
+    as(client).body(replacement).put("/api/v1/budgets/{id}", ruleId).then()
+        .statusCode(200)
+        .body("status", equalTo("updated"))
+        .body("ruleId", equalTo(ruleId))
+        .body("scope", equalTo("PROJECT"))
+        .body("period", equalTo("WEEKLY"))
+        .body("limitAmount", equalTo(2.5f))
+        .body("thresholds", contains(25, 75));
+    as(client).get("/api/v1/budgets/{id}", ruleId).then()
+        .body("scopeValue", equalTo("bot"));
+
+    as("someone-else").body(replacement).put("/api/v1/budgets/{id}", ruleId).then()
+        .statusCode(404);
+    as(client).body(replacement).put("/api/v1/budgets/{id}", UUID.randomUUID()).then()
+        .statusCode(404);
+    as(client).get("/api/v1/budgets/{id}", "not-a-uuid").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+  }
+
+  @Test
+  void budgetRulesRejectInvalidScopesThresholdsAndCallbacks() {
+    as(client).body(Map.of("scope", "CLIENT", "scopeValue", "bot", "period", "MONTHLY",
+            "limitAmount", 1.00, "thresholds", List.of(50)))
+        .post("/api/v1/budgets").then()
+        .statusCode(400)
+        .body("message", containsString("scopeValue"));
+    as(client).body(Map.of("scope", "PROJECT", "period", "MONTHLY",
+            "limitAmount", 1.00, "thresholds", List.of(50)))
+        .post("/api/v1/budgets").then()
+        .statusCode(400)
+        .body("message", containsString("scopeValue"));
+    as(client).body(Map.of("scope", "CLIENT", "period", "MONTHLY",
+            "limitAmount", 1.00, "thresholds", List.of(50), "callbackUrl", "ftp://example.com"))
+        .post("/api/v1/budgets").then()
+        .statusCode(400)
+        .body("message", containsString("callbackUrl"));
+    as(client).body(Map.of("scope", "CLIENT", "period", "MONTHLY",
+            "limitAmount", 0, "thresholds", List.of()))
+        .post("/api/v1/budgets").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"));
+    as(client).body(Map.of("scope", "TEAM", "period", "MONTHLY",
+            "limitAmount", 1.00, "thresholds", List.of(50)))
+        .post("/api/v1/budgets").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+  }
+
+  @Test
+  void metricsRejectInvalidRangesAndParameters() {
+    as(client)
+        .queryParam("start", "2026-02-12T00:00:00Z")
+        .queryParam("end", "2026-02-10T00:00:00Z")
+        .get("/api/v1/usage/metrics").then()
+        .statusCode(400)
+        .body("message", containsString("start must be before end"));
+    as(client)
+        .queryParam("end", "2026-02-10T00:00:00Z")
+        .get("/api/v1/usage/metrics").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+    as(client)
+        .queryParam("start", "2026-02-10T00:00:00Z")
+        .queryParam("end", "2026-02-12T00:00:00Z")
+        .queryParam("granularity", "YEARLY")
+        .get("/api/v1/usage/metrics").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+    given()
+        .queryParam("start", "2026-02-10T00:00:00Z")
+        .queryParam("end", "2026-02-12T00:00:00Z")
+        .get("/api/v1/usage/metrics").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+  }
+
+  @Test
+  void recommendationRejectsInvalidRequests() {
+    as(client).body(Map.of("taskComplexity", "MEDIUM"))
+        .post("/api/v1/recommendations").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"));
+    as(client).body(Map.of("estimatedPromptTokens", 1000, "minCapabilityTier", 9))
+        .post("/api/v1/recommendations").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"));
+    as(client).body(Map.of("estimatedPromptTokens", 1000, "optimizeFor", "FASTEST_EVER"))
+        .post("/api/v1/recommendations").then()
+        .statusCode(400)
+        .body("error", equalTo("malformed_request"));
+  }
+
+  @Test
+  void savingsRejectInvalidRanges() {
+    as(client).body(Map.of("start", "2026-04-01T00:00:00Z", "end", "2026-03-01T00:00:00Z"))
+        .post("/api/v1/savings/analysis").then()
+        .statusCode(400)
+        .body("message", containsString("start must be before end"));
+    as(client).body(Map.of("start", "2026-03-01T00:00:00Z"))
+        .post("/api/v1/savings/analysis").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"));
+    as(client).body(Map.of("start", "2026-03-01T00:00:00Z", "end", "2026-04-01T00:00:00Z",
+            "alternatives", List.of(Map.of("provider", "google"))))
+        .post("/api/v1/savings/analysis").then()
+        .statusCode(400)
+        .body("error", equalTo("validation_error"));
+  }
 }
