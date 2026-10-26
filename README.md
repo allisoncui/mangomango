@@ -29,9 +29,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 
 ### Testing
 
+The whole suite runs push-button through **Maven Surefire** (3.5.4, inherited from the
+`spring-boot-starter-parent` in [`pom.xml`](pom.xml)): `mvn test` runs all 93 unit and API tests in
+one command, and `mvn test -Dtest=<ClassName>` runs a single class.
+
 | What | Tool | Where |
 |---|---|---|
-| Unit tests | JUnit 5, AssertJ | `src/test/java/com/mangomango/ledger/<package>/*Test.java` |
+| Test runner | Maven Surefire, via `mvn test` | Configured by the Spring Boot parent in [`pom.xml`](pom.xml); results in `target/surefire-reports/` |
+| Unit tests | JUnit 5 (5.12.2), AssertJ | `src/test/java/com/mangomango/ledger/<package>/*Test.java`; related cases are grouped into `@Nested` classes (e.g. `UsageServiceTest.Validation`, `.NewReport`, `.Replay`, `.BudgetFlags`) that share `@BeforeEach` setup |
 | Mocking | Mockito (`@Mock`, Spring `@MockitoBean`) | Repositories, `CatalogService`, `BudgetService` and the webhook sender are mocked; clocks are fixed with `Clock.fixed` |
 | API tests | REST Assured against the running app on a random port with H2 | [`LedgerApiTest.java`](src/test/java/com/mangomango/ledger/LedgerApiTest.java) |
 | Coverage | JaCoCo | Report at `target/site/jacoco/index.html` after `mvn verify`; committed copy in [`reports/jacoco/`](reports/jacoco/index.html) |
@@ -302,6 +307,25 @@ to the pull request that completed it. Our mentor and instructor have been invit
 ## AI usage
 
 For this project, we used Claude Code to assist with code generation and troubleshooting.
+
+### How AI-generated code is marked
+
+All 89 Java, XML and YAML files on the tagged release — main code, test code and build
+configuration alike — carry a `Generated using Claude Code.` header comment at the top of the file:
+
+- `//` on line 1 of all 84 Java sources and tests;
+- `#` on line 1 of the three YAML files (`application.yml`, `docker-compose.yml`,
+  `.github/workflows/ci.yml`);
+- `<!-- -->` on line 2 of `pom.xml` and `clients/usage-cli/pom.xml`, directly below the XML
+  declaration, which must come first.
+
+The one unmarked configuration file is `.gitignore`: six lines of standard Java/IDE ignore
+patterns.
+
+The Markdown documentation (this README, [`SPEC.md`](SPEC.md) and
+[`clients/usage-cli/README.md`](clients/usage-cli/README.md)) was also drafted with AI help, as the
+prompts table below records, but carries no inline header. The contents of [`reports/`](reports) are
+Checkstyle and JaCoCo tool output rather than written code.
 
 ### Token usage
 
