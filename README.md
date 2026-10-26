@@ -294,6 +294,13 @@ to the pull request that completed it. Our mentor and instructor have been invit
 
 For this project, we used Claude Code to assist with code generation and troubleshooting.
 
+### Token usage
+
+On average, each person used approximately 43.3 million tokens with Claude Code (Claude Opus 5.5), including 42.2 million 
+cached input tokens and 166,921 output tokens, with an estimated total of 216 million tokens across the five-person team.
+
+### Prompts
+
 For brevity, our use cases are summarized in the table below. While not every prompt and response
 is documented here, these examples illustrate the types of assistance we received from the AI tool
 throughout the development process, as well as the files affected by the changes.
