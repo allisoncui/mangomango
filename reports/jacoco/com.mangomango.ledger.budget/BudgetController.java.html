@@ -45,13 +45,13 @@ public class BudgetController {
       @RequestHeader(ClientHeader.NAME) String clientId,
       @PathVariable UUID ruleId,
       @Valid @RequestBody BudgetRuleRequest request) {
-<span class="nc" id="L48">    return budgetService.update(clientId, ruleId, request);</span>
+<span class="fc" id="L48">    return budgetService.update(clientId, ruleId, request);</span>
   }
 
   /** Lists the client's rules. */
   @GetMapping
   public List&lt;BudgetRuleResponse&gt; list(@RequestHeader(ClientHeader.NAME) String clientId) {
-<span class="nc" id="L54">    return budgetService.list(clientId);</span>
+<span class="fc" id="L54">    return budgetService.list(clientId);</span>
   }
 
   /** Returns one rule. */

@@ -39,7 +39,7 @@ public class CatalogController {
   /** Lists the currently active version of every model. */
   @GetMapping
   public List&lt;CatalogEntryResponse&gt; listActive() {
-<span class="nc" id="L42">    return catalogService.activeModels().stream().map(CatalogEntryResponse::from).toList();</span>
+<span class="fc" id="L42">    return catalogService.activeModels().stream().map(CatalogEntryResponse::from).toList();</span>
   }
 
   /** Returns the currently active version of one model. */

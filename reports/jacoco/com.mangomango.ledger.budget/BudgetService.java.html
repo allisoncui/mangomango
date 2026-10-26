@@ -59,10 +59,10 @@ public class BudgetService {
   /** Replaces an existing rule and re-evaluates current spending against it. */
   @Transactional
   public BudgetRuleResponse update(String clientId, UUID ruleId, BudgetRuleRequest request) {
-<span class="nc" id="L62">    BudgetRule rule = find(clientId, ruleId);</span>
-<span class="nc" id="L63">    Instant now = clock.instant();</span>
-<span class="nc" id="L64">    apply(rule, request, now);</span>
-<span class="nc" id="L65">    return BudgetRuleResponse.of(&quot;updated&quot;, rule, status(rule, now, List.of()));</span>
+<span class="fc" id="L62">    BudgetRule rule = find(clientId, ruleId);</span>
+<span class="fc" id="L63">    Instant now = clock.instant();</span>
+<span class="fc" id="L64">    apply(rule, request, now);</span>
+<span class="fc" id="L65">    return BudgetRuleResponse.of(&quot;updated&quot;, rule, status(rule, now, List.of()));</span>
   }
 
   /** Returns one rule with its current spending. */
@@ -75,10 +75,10 @@ public class BudgetService {
   /** Returns every rule the client owns with current spending. */
   @Transactional(readOnly = true)
   public List&lt;BudgetRuleResponse&gt; list(String clientId) {
-<span class="nc" id="L78">    Instant now = clock.instant();</span>
-<span class="nc" id="L79">    return ruleRepository.findByClientIdOrderByCreatedAtAsc(clientId).stream()</span>
-<span class="nc" id="L80">        .map(r -&gt; BudgetRuleResponse.of(&quot;ok&quot;, r, status(r, now, List.of())))</span>
-<span class="nc" id="L81">        .toList();</span>
+<span class="fc" id="L78">    Instant now = clock.instant();</span>
+<span class="fc" id="L79">    return ruleRepository.findByClientIdOrderByCreatedAtAsc(clientId).stream()</span>
+<span class="fc" id="L80">        .map(r -&gt; BudgetRuleResponse.of(&quot;ok&quot;, r, status(r, now, List.of())))</span>
+<span class="fc" id="L81">        .toList();</span>
   }
 
   /** Deletes a rule and its alert history. */
@@ -218,10 +218,10 @@ public class BudgetService {
 <span class="fc" id="L218">        throw new ValidationException(&quot;scopeValue must be omitted for CLIENT scope&quot;);</span>
       }
 <span class="fc" id="L220">      scopeValue = null;</span>
-<span class="pc bpc" id="L221" title="2 of 4 branches missed.">    } else if (scopeValue == null || scopeValue.isEmpty()) {</span>
-<span class="nc" id="L222">      throw new ValidationException(&quot;scopeValue is required for &quot; + request.scope() + &quot; scope&quot;);</span>
-<span class="pc bpc" id="L223" title="1 of 2 branches missed.">    } else if (request.scope() == BudgetScope.PROVIDER) {</span>
-<span class="nc" id="L224">      scopeValue = ModelKey.normalize(scopeValue);</span>
+<span class="pc bpc" id="L221" title="1 of 4 branches missed.">    } else if (scopeValue == null || scopeValue.isEmpty()) {</span>
+<span class="fc" id="L222">      throw new ValidationException(&quot;scopeValue is required for &quot; + request.scope() + &quot; scope&quot;);</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">    } else if (request.scope() == BudgetScope.PROVIDER) {</span>
+<span class="fc" id="L224">      scopeValue = ModelKey.normalize(scopeValue);</span>
     }
 <span class="fc" id="L226">    validateCallbackUrl(request.callbackUrl());</span>
 <span class="fc" id="L227">    List&lt;Integer&gt; thresholds = request.thresholds().stream().distinct().sorted().toList();</span>
@@ -236,8 +236,8 @@ public class BudgetService {
 <span class="fc" id="L236">  }</span>
 
   private static void validateCallbackUrl(String url) {
-<span class="pc bpc" id="L239" title="1 of 2 branches missed.">    if (url == null) {</span>
-<span class="nc" id="L240">      return;</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">    if (url == null) {</span>
+<span class="fc" id="L240">      return;</span>
     }
     try {
 <span class="fc" id="L243">      URI uri = new URI(url);</span>
