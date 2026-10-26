@@ -144,6 +144,8 @@ Omit `alternatives` to compare every catalog model. Re-prices the recorded token
 each alternative using the price in effect at each call's timestamp. Excludes alternatives whose
 context window is below the largest recorded call or whose tier is below the highest tier used.
 Returns actual cost, projected cost, savings ($ and %), recorded average latency, and exclusions.
+Calls on models missing from the catalog are left out of the analysis and listed in
+`unknownModelsUsed`.
 
 ### Status codes
 
@@ -281,9 +283,23 @@ This repository contains no third-party source code; all code was written for th
 External libraries (e.g. Spring Boot, JUnit) are fetched by Maven at build time from the
 dependencies declared in `pom.xml` and `clients/usage-cli/pom.xml`.
 
+## Project management
+
+Tasks and who completed them are tracked on our Trello board:
+[mangomango](https://trello.com/invite/b/6adf900fd5c26d6acf0f3a22/ATTIe58929af2d5cdc0ac71d65c4c829023aA05699F5/mangomango),
+with columns Backlog, In Progress, In Review and Done. Each card is assigned to its owner and links
+to the pull request that completed it. Our mentor and instructor have been invited to the board.
+
 ## AI usage
 
 For this project, we used Claude Code to assist with code generation and troubleshooting.
+
+### Token usage
+
+On average, each person used approximately 43.3 million tokens with Claude Code (Claude Opus 5.5), including 42.2 million 
+cached input tokens and 166,921 output tokens, with an estimated total of 216 million tokens across the five-person team.
+
+### Prompts
 
 For brevity, our use cases are summarized in the table below. While not every prompt and response
 is documented here, these examples illustrate the types of assistance we received from the AI tool
