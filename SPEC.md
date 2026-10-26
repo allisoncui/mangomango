@@ -266,7 +266,7 @@ that period. Used only to make alerts fire once (R4.3).
 - **Success:** `200` with `start`, `end`, `projectTag`, `requestCount`, `actualCost`,
   `largestRequestTokens`, `highestCapabilityTierUsed`, `alternatives` (`provider`, `modelId`,
   `projectedCost`, `savings`, `savingsPercent`, `averageLatencyMs`, `currentlyUsed`,
-  `requestsPricedAtCurrentRate`), `excluded`.
+  `requestsPricedAtCurrentRate`), `excluded`, `unknownModelsUsed` (models used in the range that are not in the catalog; their calls are left out of the analysis).
 - **Side effects:** none.
 - **Errors:** 400 (`start` not before `end`, invalid field).
 

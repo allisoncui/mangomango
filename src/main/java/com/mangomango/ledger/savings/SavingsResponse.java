@@ -18,6 +18,9 @@ import java.util.List;
  * @param highestCapabilityTierUsed highest capability tier among models actually used
  * @param alternatives qualifying alternatives, cheapest first
  * @param excluded alternatives that did not qualify, with reasons
+ * @param unknownModelsUsed models used in the range that are not in the catalog;
+ *                          their calls are left out of the analysis
+ *                          because their capability tier is unknown
  */
 public record SavingsResponse(
     Instant start,
@@ -28,7 +31,8 @@ public record SavingsResponse(
     long largestRequestTokens,
     int highestCapabilityTierUsed,
     List<Alternative> alternatives,
-    List<Excluded> excluded) {
+    List<Excluded> excluded,
+    List<String> unknownModelsUsed) {
 
   /**
    * One alternative model's projected cost.

@@ -147,6 +147,20 @@ class MetricsServiceTest {
     }
 
     @Test
+    void projectFilterIsTrimmed() {
+      UsageSummary summary = service.summarize("c1", filtered(null, null, " bot "));
+
+      assertThat(summary.totals().requestCount()).isEqualTo(2);
+    }
+
+    @Test
+    void blankProjectFilterMeansNoFilter() {
+      UsageSummary summary = service.summarize("c1", filtered(null, null, ""));
+
+      assertThat(summary.totals().requestCount()).isEqualTo(3);
+    }
+
+    @Test
     void filtersCombine() {
       UsageSummary summary = service.summarize("c1", filtered("google", null, "bot"));
 
@@ -258,6 +272,24 @@ class MetricsServiceTest {
           .extracting(UsageSummary.ModelCost::modelId)
           .containsExactly("gpt-4o", "gemini-2.0-flash", "gpt-4o-mini");
       assertThat(summary.costBreakdown().get(0).totalCost()).isEqualByComparingTo("0.30");
+    }
+
+    @Test
+    void costBreakdownBreaksTiesByProviderThenModel() {
+      when(repository.findInRange("c1", DAY_1, DAY_4)).thenReturn(List.of(
+              event("openai", "gpt-4o-mini", null, "0.10", DAY_1.plusSeconds(60)),
+              event("google", "gemini-2.0-flash", null, "0.10", DAY_1.plusSeconds(120)),
+              event("openai", "gpt-4o", null, "0.30", DAY_1.plusSeconds(180)),
+              event("anthropic", "claude-haiku", null, "0.10", DAY_1.plusSeconds(240)),
+              event("openai", "gpt-4.1-nano", null, "0.10", DAY_1.plusSeconds(300))));
+
+      UsageSummary summary =
+              service.summarize("c1", query(DAY_1, DAY_4, Granularity.DAILY, null));
+
+      assertThat(summary.costBreakdown())
+              .extracting(UsageSummary.ModelCost::modelId)
+              .containsExactly("gpt-4o", "claude-haiku", "gemini-2.0-flash", "gpt-4.1-nano",
+                      "gpt-4o-mini");
     }
   }
 }

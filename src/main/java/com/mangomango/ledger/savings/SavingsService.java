@@ -14,8 +14,10 @@ import com.mangomango.ledger.usage.UsageEventRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,26 +47,41 @@ public class SavingsService {
         request.projectTag() == null || request.projectTag().isBlank()
             ? null
             : request.projectTag().trim();
+    List<UsageEvent> inRange =
+            usageRepository.findInRange(clientId, request.start(), request.end()).stream()
+                    .filter(e -> project == null || project.equals(e.getProjectTag()))
+                    .toList();
+
+    // A used model's tier sets the floor for alternatives. If a used model is missing from the
+    // catalog its tier is unknown, so its calls are left out rather than lowering the floor.
+    Map<ModelKey, Integer> tierByModel = new HashMap<>();
+    for (UsageEvent e : inRange) {
+      ModelKey key = new ModelKey(e.getProvider(), e.getModelId());
+      if (!tierByModel.containsKey(key)) {
+        catalogService.currentOrLatest(key)
+                .ifPresent(p -> tierByModel.put(key, p.getCapabilityTier()));
+      }
+    }
+    List<String> unknownModelsUsed =
+            inRange.stream()
+                    .map(e -> new ModelKey(e.getProvider(), e.getModelId()))
+                    .filter(key -> !tierByModel.containsKey(key))
+                    .map(ModelKey::toString)
+                    .distinct()
+                    .sorted()
+                    .toList();
     List<UsageEvent> events =
-        usageRepository.findInRange(clientId, request.start(), request.end()).stream()
-            .filter(e -> project == null || project.equals(e.getProjectTag()))
-            .toList();
+            inRange.stream()
+                    .filter(
+                            e -> tierByModel.containsKey(
+                                    new ModelKey(e.getProvider(), e.getModelId())))
+                    .toList();
 
     BigDecimal actual =
-        Money.round(events.stream().map(UsageEvent::getCost).reduce(BigDecimal.ZERO,
-            BigDecimal::add));
+            Money.round(events.stream().map(UsageEvent::getCost).reduce(BigDecimal.ZERO,
+                    BigDecimal::add));
     long largest = events.stream().mapToLong(UsageEvent::totalTokens).max().orElse(0);
-    Set<ModelKey> used =
-        events.stream()
-            .map(e -> new ModelKey(e.getProvider(), e.getModelId()))
-            .collect(Collectors.toSet());
-    int highestTier =
-        used.stream()
-            .map(catalogService::currentOrLatest)
-            .flatMap(Optional::stream)
-            .mapToInt(ModelPrice::getCapabilityTier)
-            .max()
-            .orElse(0);
+    int highestTier = tierByModel.values().stream().mapToInt(Integer::intValue).max().orElse(0);
 
     List<SavingsResponse.Alternative> alternatives = new ArrayList<>();
     List<SavingsResponse.Excluded> excluded = new ArrayList<>();
@@ -98,7 +115,8 @@ public class SavingsService {
         largest,
         highestTier,
         alternatives,
-        excluded);
+        excluded,
+        unknownModelsUsed);
   }
 
   private SavingsResponse.Alternative reprice(
