@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogEntryResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.catalog</a> &gt; <span class="el_source">CatalogEntryResponse.java</span></div><h1>CatalogEntryResponse.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.catalog;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+
+/**
+ * One pricing version as returned to clients.
+ *
+ * @param entryId catalog row ID
+ * @param provider provider name
+ * @param modelId model identifier
+ * @param version pricing version number for this model, starting at 1
+ * @param inputPricePerMillion dollars per million input tokens
+ * @param outputPricePerMillion dollars per million output tokens
+ * @param cachedInputPricePerMillion dollars per million cached input tokens, or null
+ * @param contextWindow maximum tokens per request
+ * @param capabilityTier 1 (basic) to 5 (frontier)
+ * @param effectiveDate when this version starts applying
+ */
+<span class="fc" id="L22">public record CatalogEntryResponse(</span>
+    Long entryId,
+    String provider,
+    String modelId,
+    int version,
+    BigDecimal inputPricePerMillion,
+    BigDecimal outputPricePerMillion,
+    BigDecimal cachedInputPricePerMillion,
+    int contextWindow,
+    int capabilityTier,
+    Instant effectiveDate) {
+
+  /** Converts an entity to its response form. */
+  public static CatalogEntryResponse from(ModelPrice p) {
+<span class="fc" id="L36">    return new CatalogEntryResponse(</span>
+<span class="fc" id="L37">        p.getId(),</span>
+<span class="fc" id="L38">        p.getProvider(),</span>
+<span class="fc" id="L39">        p.getModelId(),</span>
+<span class="fc" id="L40">        p.getVersion(),</span>
+<span class="fc" id="L41">        p.getInputPricePerMillion(),</span>
+<span class="fc" id="L42">        p.getOutputPricePerMillion(),</span>
+<span class="fc" id="L43">        p.getCachedInputPricePerMillion(),</span>
+<span class="fc" id="L44">        p.getContextWindow(),</span>
+<span class="fc" id="L45">        p.getCapabilityTier(),</span>
+<span class="fc" id="L46">        p.getEffectiveFrom());</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

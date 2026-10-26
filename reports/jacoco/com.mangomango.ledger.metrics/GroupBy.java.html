@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupBy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.metrics</a> &gt; <span class="el_source">GroupBy.java</span></div><h1>GroupBy.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.metrics;
+
+import com.mangomango.ledger.usage.UsageEvent;
+
+/** Dimension used to split usage into groups. */
+<span class="fc" id="L8">public enum GroupBy {</span>
+<span class="fc" id="L9">  PROVIDER,</span>
+<span class="fc" id="L10">  MODEL,</span>
+<span class="fc" id="L11">  PROJECT;</span>
+
+  /** Placeholder group key for events without a project tag. */
+  public static final String UNTAGGED = &quot;(untagged)&quot;;
+
+  /** Returns the group key of an event under this dimension. */
+  public String keyOf(UsageEvent e) {
+<span class="fc bfc" id="L18" title="All 3 branches covered.">    return switch (this) {</span>
+<span class="fc" id="L19">      case PROVIDER -&gt; e.getProvider();</span>
+<span class="fc" id="L20">      case MODEL -&gt; e.getProvider() + &quot;/&quot; + e.getModelId();</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">      case PROJECT -&gt; e.getProjectTag() == null ? UNTAGGED : e.getProjectTag();</span>
+    };
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

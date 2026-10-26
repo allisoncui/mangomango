@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetRuleResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetRuleResponse.java</span></div><h1>BudgetRuleResponse.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * A stored budget rule with its current spending.
+ *
+ * @param status {@code created}, {@code updated} or {@code ok}
+ * @param ruleId rule ID
+ * @param scope what spending the rule counts
+ * @param scopeValue project tag or provider, null for client-wide rules
+ * @param period reset period
+ * @param limitAmount spending limit per period
+ * @param thresholds alert thresholds in percent
+ * @param callbackUrl webhook URL, or null
+ * @param currentSpend spending so far in the current period
+ * @param percentConsumed current spending as a percentage of the limit
+ * @param crossedThresholds thresholds already crossed in the current period
+ */
+<span class="fc" id="L24">public record BudgetRuleResponse(</span>
+    String status,
+    UUID ruleId,
+    BudgetScope scope,
+    String scopeValue,
+    BudgetPeriod period,
+    BigDecimal limitAmount,
+    List&lt;Integer&gt; thresholds,
+    String callbackUrl,
+    BigDecimal currentSpend,
+    BigDecimal percentConsumed,
+    List&lt;Integer&gt; crossedThresholds) {
+
+  /** Combines a rule with its current status. */
+  public static BudgetRuleResponse of(String status, BudgetRule rule, BudgetStatus current) {
+<span class="fc" id="L39">    return new BudgetRuleResponse(</span>
+        status,
+<span class="fc" id="L41">        rule.getId(),</span>
+<span class="fc" id="L42">        rule.getScope(),</span>
+<span class="fc" id="L43">        rule.getScopeValue(),</span>
+<span class="fc" id="L44">        rule.getPeriod(),</span>
+<span class="fc" id="L45">        rule.getLimitAmount(),</span>
+<span class="fc" id="L46">        rule.getThresholds(),</span>
+<span class="fc" id="L47">        rule.getCallbackUrl(),</span>
+<span class="fc" id="L48">        current.spent(),</span>
+<span class="fc" id="L49">        current.percentUsed(),</span>
+<span class="fc" id="L50">        current.crossedThresholds());</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

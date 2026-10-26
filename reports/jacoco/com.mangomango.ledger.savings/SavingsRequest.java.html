@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SavingsRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.savings</a> &gt; <span class="el_source">SavingsRequest.java</span></div><h1>SavingsRequest.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.savings;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Request body for a cost-savings analysis.
+ *
+ * @param start range start (inclusive)
+ * @param end range end (exclusive)
+ * @param projectTag optional project to restrict the analysis to
+ * @param alternatives models to compare; when empty, every catalog model is compared
+ */
+<span class="fc" id="L19">public record SavingsRequest(</span>
+    @NotNull Instant start,
+    @NotNull Instant end,
+    String projectTag,
+    List&lt;@Valid ModelRef&gt; alternatives) {
+
+  /**
+   * Reference to a catalog model.
+   *
+   * @param provider provider name
+   * @param modelId model identifier
+   */
+<span class="fc" id="L31">  public record ModelRef(@NotBlank String provider, @NotBlank String modelId) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

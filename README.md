@@ -34,7 +34,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 | Unit tests | JUnit 5, AssertJ | `src/test/java/com/mangomango/ledger/<package>/*Test.java` |
 | Mocking | Mockito (`@Mock`, Spring `@MockitoBean`) | Repositories, `CatalogService`, `BudgetService` and the webhook sender are mocked; clocks are fixed with `Clock.fixed` |
 | API tests | REST Assured against the running app on a random port with H2 | [`LedgerApiTest.java`](src/test/java/com/mangomango/ledger/LedgerApiTest.java) |
-| Coverage | JaCoCo | Report at `target/site/jacoco/index.html` after `mvn verify` |
+| Coverage | JaCoCo | Report at `target/site/jacoco/index.html` after `mvn verify`; committed copy in [`reports/jacoco/`](reports/jacoco/index.html) |
 
 All test dependencies and plugins are configured in [`pom.xml`](pom.xml). The CLI client has its
 own tests; see [`clients/usage-cli`](clients/usage-cli).
@@ -46,6 +46,15 @@ own tests; see [`clients/usage-cli`](clients/usage-cli).
   fails the build.
 - **PMD** with its default Maven ruleset, run during `mvn verify`.
 - Both run in CI on every pull request.
+
+### Reports for the `t2-iteration-1` release
+
+Generated from the tagged commit's source with `mvn verify checkstyle:checkstyle` (87 tests, 0 failures):
+
+- **Checkstyle** (Google Java Style, Checkstyle 10.26.1, main + test code): **clean, 0 violations**.
+  Report: [`reports/checkstyle-result.xml`](reports/checkstyle-result.xml).
+- **Branch coverage (JaCoCo): 84.5%** (213 of 252 branches); 839 of 884 lines (94.9%).
+  Report: [`reports/jacoco/index.html`](reports/jacoco/index.html) (also `jacoco.csv` / `jacoco.xml`).
 
 ## API
 

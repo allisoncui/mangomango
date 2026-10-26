@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetPeriod.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetPeriod.java</span></div><h1>BudgetPeriod.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalAdjusters;
+
+/** Budget reset period. All periods are computed in UTC. */
+<span class="fc" id="L12">public enum BudgetPeriod {</span>
+<span class="fc" id="L13">  DAILY,</span>
+<span class="fc" id="L14">  WEEKLY,</span>
+<span class="fc" id="L15">  MONTHLY;</span>
+
+  /** Returns the start (inclusive) of the period that contains {@code at}. */
+  public Instant start(Instant at) {
+<span class="fc" id="L19">    LocalDate day = at.atZone(ZoneOffset.UTC).toLocalDate();</span>
+<span class="fc" id="L20">    LocalDate first =</span>
+<span class="fc bfc" id="L21" title="All 3 branches covered.">        switch (this) {</span>
+<span class="fc" id="L22">          case DAILY -&gt; day;</span>
+<span class="fc" id="L23">          case WEEKLY -&gt; day.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));</span>
+<span class="fc" id="L24">          case MONTHLY -&gt; day.withDayOfMonth(1);</span>
+        };
+<span class="fc" id="L26">    return first.atStartOfDay(ZoneOffset.UTC).toInstant();</span>
+  }
+
+  /** Returns the end (exclusive) of the period that contains {@code at}. */
+  public Instant end(Instant at) {
+<span class="fc" id="L31">    LocalDate start = start(at).atZone(ZoneOffset.UTC).toLocalDate();</span>
+<span class="fc" id="L32">    LocalDate next =</span>
+<span class="fc bfc" id="L33" title="All 3 branches covered.">        switch (this) {</span>
+<span class="fc" id="L34">          case DAILY -&gt; start.plusDays(1);</span>
+<span class="fc" id="L35">          case WEEKLY -&gt; start.plusWeeks(1);</span>
+<span class="fc" id="L36">          case MONTHLY -&gt; start.plusMonths(1);</span>
+        };
+<span class="fc" id="L38">    return next.atStartOfDay(ZoneOffset.UTC).toInstant();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

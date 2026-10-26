@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogSeeder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.catalog</a> &gt; <span class="el_source">CatalogSeeder.java</span></div><h1>CatalogSeeder.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.catalog;
+
+import com.mangomango.ledger.common.LedgerProperties;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+
+/**
+ * Loads a small sample catalog into an empty database so the service is usable for demos. The
+ * prices are illustrative, not authoritative; administrators should maintain real prices through
+ * the catalog API.
+ */
+@Component
+public class CatalogSeeder implements ApplicationRunner {
+
+<span class="fc" id="L23">  private static final Logger LOG = LoggerFactory.getLogger(CatalogSeeder.class);</span>
+<span class="fc" id="L24">  private static final Instant SEED_EFFECTIVE_FROM = Instant.parse(&quot;2025-01-01T00:00:00Z&quot;);</span>
+
+  private final ModelPriceRepository repository;
+  private final LedgerProperties properties;
+  private final Clock clock;
+
+  /** Creates the seeder. */
+  public CatalogSeeder(ModelPriceRepository repository, LedgerProperties properties,
+<span class="fc" id="L32">      Clock clock) {</span>
+<span class="fc" id="L33">    this.repository = repository;</span>
+<span class="fc" id="L34">    this.properties = properties;</span>
+<span class="fc" id="L35">    this.clock = clock;</span>
+<span class="fc" id="L36">  }</span>
+
+  @Override
+  public void run(ApplicationArguments args) {
+<span class="pc bpc" id="L40" title="3 of 4 branches missed.">    if (!properties.seedCatalog() || repository.count() &gt; 0) {</span>
+<span class="fc" id="L41">      return;</span>
+    }
+<span class="nc" id="L43">    seed(&quot;openai&quot;, &quot;gpt-4o&quot;, &quot;2.50&quot;, &quot;10.00&quot;, &quot;1.25&quot;, 128_000, 4);</span>
+<span class="nc" id="L44">    seed(&quot;openai&quot;, &quot;gpt-4o-mini&quot;, &quot;0.15&quot;, &quot;0.60&quot;, &quot;0.075&quot;, 128_000, 2);</span>
+<span class="nc" id="L45">    seed(&quot;anthropic&quot;, &quot;claude-sonnet-4&quot;, &quot;3.00&quot;, &quot;15.00&quot;, &quot;0.30&quot;, 200_000, 4);</span>
+<span class="nc" id="L46">    seed(&quot;anthropic&quot;, &quot;claude-haiku-3.5&quot;, &quot;0.80&quot;, &quot;4.00&quot;, &quot;0.08&quot;, 200_000, 2);</span>
+<span class="nc" id="L47">    seed(&quot;google&quot;, &quot;gemini-2.0-flash&quot;, &quot;0.10&quot;, &quot;0.40&quot;, &quot;0.025&quot;, 1_000_000, 2);</span>
+<span class="nc" id="L48">    seed(&quot;google&quot;, &quot;gemini-1.5-pro&quot;, &quot;1.25&quot;, &quot;5.00&quot;, &quot;0.3125&quot;, 2_000_000, 4);</span>
+<span class="nc" id="L49">    LOG.info(&quot;Seeded sample model catalog with {} entries&quot;, repository.count());</span>
+<span class="nc" id="L50">  }</span>
+
+  private void seed(String provider, String model, String in, String out, String cached,
+      int contextWindow, int tier) {
+<span class="nc" id="L54">    repository.save(</span>
+        new ModelPrice(
+            provider,
+            model,
+            1,
+            new BigDecimal(in),
+            new BigDecimal(out),
+            new BigDecimal(cached),
+            contextWindow,
+            tier,
+            SEED_EFFECTIVE_FROM,
+<span class="nc" id="L65">            clock.instant()));</span>
+<span class="nc" id="L66">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

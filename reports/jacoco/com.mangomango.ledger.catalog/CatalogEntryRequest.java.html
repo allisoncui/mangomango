@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogEntryRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.catalog</a> &gt; <span class="el_source">CatalogEntryRequest.java</span></div><h1>CatalogEntryRequest.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.catalog;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.Instant;
+
+/**
+ * Request body for adding a pricing version to the catalog.
+ *
+ * @param provider provider name, e.g. {@code openai}
+ * @param modelId model identifier
+ * @param inputPricePerMillion dollars per million input tokens
+ * @param outputPricePerMillion dollars per million output tokens
+ * @param cachedInputPricePerMillion optional dollars per million cached input tokens
+ * @param contextWindow maximum tokens per request
+ * @param capabilityTier 1 (basic) to 5 (frontier)
+ * @param effectiveDate when this price starts applying; defaults to now
+ */
+<span class="fc" id="L25">public record CatalogEntryRequest(</span>
+    @NotBlank String provider,
+    @NotBlank String modelId,
+    @NotNull @DecimalMin(&quot;0.0&quot;) BigDecimal inputPricePerMillion,
+    @NotNull @DecimalMin(&quot;0.0&quot;) BigDecimal outputPricePerMillion,
+    @DecimalMin(&quot;0.0&quot;) BigDecimal cachedInputPricePerMillion,
+    @Min(1) int contextWindow,
+    @Min(1) @Max(5) int capabilityTier,
+    Instant effectiveDate) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

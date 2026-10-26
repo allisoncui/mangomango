@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetAlertEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetAlertEvent.java</span></div><h1>BudgetAlertEvent.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Payload sent to a rule's callback URL when a threshold is first crossed in a period.
+ *
+ * @param clientId owning client
+ * @param ruleId the rule whose threshold was crossed
+ * @param thresholdPercent the threshold crossed
+ * @param percentUsed current spending as a percentage of the limit
+ * @param spent current spending in the period
+ * @param limit spending limit for the period
+ * @param periodStart start of the period
+ * @param callbackUrl where the payload is delivered
+ */
+<span class="fc" id="L21">public record BudgetAlertEvent(</span>
+    String clientId,
+    UUID ruleId,
+    int thresholdPercent,
+    BigDecimal percentUsed,
+    BigDecimal spent,
+    BigDecimal limit,
+    Instant periodStart,
+    String callbackUrl) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

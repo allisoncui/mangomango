@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.catalog</a> &gt; <span class="el_source">CatalogService.java</span></div><h1>CatalogService.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.catalog;
+
+import com.mangomango.ledger.common.ForbiddenException;
+import com.mangomango.ledger.common.LedgerProperties;
+import com.mangomango.ledger.common.NotFoundException;
+import com.mangomango.ledger.common.ValidationException;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Manages the versioned model catalog and resolves the price in effect at a point in time. */
+@Service
+public class CatalogService {
+
+  private final ModelPriceRepository repository;
+  private final LedgerProperties properties;
+  private final Clock clock;
+
+  /** Creates the service. */
+  public CatalogService(ModelPriceRepository repository, LedgerProperties properties,
+<span class="fc" id="L27">      Clock clock) {</span>
+<span class="fc" id="L28">    this.repository = repository;</span>
+<span class="fc" id="L29">    this.properties = properties;</span>
+<span class="fc" id="L30">    this.clock = clock;</span>
+<span class="fc" id="L31">  }</span>
+
+  /** Stores a new pricing version without modifying earlier versions. Admin clients only. */
+  @Transactional
+  public CatalogWriteResponse addVersion(String clientId, CatalogEntryRequest request) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">    if (!properties.adminClients().contains(clientId)) {</span>
+<span class="fc" id="L37">      throw new ForbiddenException(&quot;Only administrator clients can write to the catalog&quot;);</span>
+    }
+<span class="fc" id="L39">    ModelKey key = ModelKey.of(request.provider(), request.modelId());</span>
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">    if (key.provider().isEmpty() || key.modelId().isEmpty()) {</span>
+<span class="nc" id="L41">      throw new ValidationException(&quot;provider and modelId must not be blank&quot;);</span>
+    }
+<span class="fc" id="L43">    int nextVersion =</span>
+        repository
+<span class="fc" id="L45">            .findTopByProviderAndModelIdOrderByVersionDesc(key.provider(), key.modelId())</span>
+<span class="fc" id="L46">            .map(p -&gt; p.getVersion() + 1)</span>
+<span class="fc" id="L47">            .orElse(1);</span>
+<span class="fc" id="L48">    Instant now = clock.instant();</span>
+<span class="fc" id="L49">    ModelPrice saved =</span>
+<span class="fc" id="L50">        repository.save(</span>
+            new ModelPrice(
+<span class="fc" id="L52">                key.provider(),</span>
+<span class="fc" id="L53">                key.modelId(),</span>
+                nextVersion,
+<span class="fc" id="L55">                request.inputPricePerMillion(),</span>
+<span class="fc" id="L56">                request.outputPricePerMillion(),</span>
+<span class="fc" id="L57">                request.cachedInputPricePerMillion(),</span>
+<span class="fc" id="L58">                request.contextWindow(),</span>
+<span class="fc" id="L59">                request.capabilityTier(),</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                request.effectiveDate() == null ? now : request.effectiveDate(),</span>
+                now));
+<span class="fc" id="L62">    CatalogEntryResponse active =</span>
+<span class="fc" id="L63">        priceAt(key, now).map(CatalogEntryResponse::from).orElse(null);</span>
+<span class="fc" id="L64">    return new CatalogWriteResponse(CatalogEntryResponse.from(saved), active);</span>
+  }
+
+  /** Returns the version in effect at {@code at}, if the model had a price then. */
+  @Transactional(readOnly = true)
+  public Optional&lt;ModelPrice&gt; priceAt(ModelKey key, Instant at) {
+<span class="fc" id="L70">    return repository.findInEffectAt(key.provider(), key.modelId(), at);</span>
+  }
+
+  /**
+   * Returns the price in effect at {@code at}, or throws a validation error naming the reason
+   * (unknown model, or no price yet effective at that time).
+   */
+  @Transactional(readOnly = true)
+  public ModelPrice requirePriceAt(ModelKey key, Instant at) {
+<span class="fc" id="L79">    return priceAt(key, at)</span>
+<span class="fc" id="L80">        .orElseThrow(</span>
+            () -&gt;
+<span class="fc" id="L82">                new ValidationException(</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                    repository.existsByProviderAndModelId(key.provider(), key.modelId())</span>
+<span class="fc" id="L84">                        ? &quot;No price for &quot; + key + &quot; is in effect at &quot; + at</span>
+<span class="fc" id="L85">                        : &quot;Model &quot; + key + &quot; is not in the catalog&quot;));</span>
+  }
+
+  /** Returns the version in effect now, or the latest stored version if none is in effect yet. */
+  @Transactional(readOnly = true)
+  public Optional&lt;ModelPrice&gt; currentOrLatest(ModelKey key) {
+<span class="fc" id="L91">    return priceAt(key, clock.instant())</span>
+<span class="pc" id="L92">        .or(() -&gt; repository.findTopByProviderAndModelIdOrderByVersionDesc(</span>
+<span class="nc" id="L93">            key.provider(), key.modelId()));</span>
+  }
+
+  /** Returns the currently active version of every model that has one. */
+  @Transactional(readOnly = true)
+  public List&lt;ModelPrice&gt; activeModels() {
+<span class="fc" id="L99">    Instant now = clock.instant();</span>
+<span class="fc" id="L100">    return repository.findAllModelKeys().stream()</span>
+<span class="fc" id="L101">        .sorted(Comparator.comparing(ModelKey::provider).thenComparing(ModelKey::modelId))</span>
+<span class="fc" id="L102">        .map(k -&gt; priceAt(k, now))</span>
+<span class="fc" id="L103">        .flatMap(Optional::stream)</span>
+<span class="fc" id="L104">        .toList();</span>
+  }
+
+  /** Returns the currently active version of one model. */
+  @Transactional(readOnly = true)
+  public ModelPrice activeModel(ModelKey key) {
+<span class="fc" id="L110">    return priceAt(key, clock.instant())</span>
+<span class="pc" id="L111">        .orElseThrow(() -&gt; new NotFoundException(&quot;No active catalog entry for &quot; + key));</span>
+  }
+
+  /** Returns every stored version of one model, oldest first. */
+  @Transactional(readOnly = true)
+  public List&lt;ModelPrice&gt; history(ModelKey key) {
+<span class="fc" id="L117">    List&lt;ModelPrice&gt; versions =</span>
+<span class="fc" id="L118">        repository.findByProviderAndModelIdOrderByVersionAsc(key.provider(), key.modelId());</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">    if (versions.isEmpty()) {</span>
+<span class="nc" id="L120">      throw new NotFoundException(&quot;Model &quot; + key + &quot; is not in the catalog&quot;);</span>
+    }
+<span class="fc" id="L122">    return versions;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

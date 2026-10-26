@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.common</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.common;
+
+import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+/** Maps exceptions to consistent JSON error responses. */
+@RestControllerAdvice
+<span class="fc" id="L20">public class GlobalExceptionHandler {</span>
+
+  /** Business-rule validation failures. */
+  @ExceptionHandler(ValidationException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleValidation(ValidationException ex) {
+<span class="fc" id="L25">    return build(HttpStatus.BAD_REQUEST, &quot;validation_error&quot;, ex.getMessage(), List.of());</span>
+  }
+
+  /** Missing resources. */
+  @ExceptionHandler(NotFoundException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleNotFound(NotFoundException ex) {
+<span class="fc" id="L31">    return build(HttpStatus.NOT_FOUND, &quot;not_found&quot;, ex.getMessage(), List.of());</span>
+  }
+
+  /** Operations the client may not perform. */
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleForbidden(ForbiddenException ex) {
+<span class="fc" id="L37">    return build(HttpStatus.FORBIDDEN, &quot;forbidden&quot;, ex.getMessage(), List.of());</span>
+  }
+
+  /** Requests that contradict state the service already stored. */
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleStateConflict(ConflictException ex) {
+<span class="fc" id="L43">    return build(HttpStatus.CONFLICT, &quot;conflict&quot;, ex.getMessage(), List.of());</span>
+  }
+
+  /** Reports every invalid field in a request body. */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleInvalidBody(MethodArgumentNotValidException ex) {
+<span class="fc" id="L49">    List&lt;String&gt; details =</span>
+<span class="fc" id="L50">        ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="fc" id="L51">            .map(e -&gt; e.getField() + &quot;: &quot; + e.getDefaultMessage())</span>
+<span class="fc" id="L52">            .sorted()</span>
+<span class="fc" id="L53">            .toList();</span>
+<span class="fc" id="L54">    return build(HttpStatus.BAD_REQUEST, &quot;validation_error&quot;, &quot;Invalid request body&quot;, details);</span>
+  }
+
+  /** Two concurrent reports with the same idempotency key: the loser should simply retry. */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleConflict(DataIntegrityViolationException ex) {
+<span class="nc" id="L60">    return build(HttpStatus.CONFLICT, &quot;conflict&quot;,</span>
+<span class="nc" id="L61">        &quot;Concurrent write conflict; retry the request&quot;, List.of());</span>
+  }
+
+  /** Invalid path or query parameters. */
+  @ExceptionHandler(HandlerMethodValidationException.class)
+  public ResponseEntity&lt;ErrorResponse&gt; handleInvalidParams(HandlerMethodValidationException ex) {
+<span class="nc" id="L67">    return build(HttpStatus.BAD_REQUEST, &quot;validation_error&quot;, &quot;Invalid request parameters&quot;,</span>
+<span class="nc" id="L68">        List.of());</span>
+  }
+
+  /** Unparseable bodies, missing headers and badly typed parameters. */
+  @ExceptionHandler({
+    HttpMessageNotReadableException.class,
+    MissingRequestHeaderException.class,
+    MissingServletRequestParameterException.class,
+    MethodArgumentTypeMismatchException.class
+  })
+  public ResponseEntity&lt;ErrorResponse&gt; handleMalformed(Exception ex) {
+<span class="fc" id="L79">    return build(HttpStatus.BAD_REQUEST, &quot;malformed_request&quot;, ex.getMessage(), List.of());</span>
+  }
+
+  private static ResponseEntity&lt;ErrorResponse&gt; build(
+      HttpStatus status, String code, String message, List&lt;String&gt; details) {
+<span class="fc" id="L84">    return ResponseEntity.status(status).body(new ErrorResponse(code, message, details));</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
