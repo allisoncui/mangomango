@@ -144,6 +144,8 @@ Omit `alternatives` to compare every catalog model. Re-prices the recorded token
 each alternative using the price in effect at each call's timestamp. Excludes alternatives whose
 context window is below the largest recorded call or whose tier is below the highest tier used.
 Returns actual cost, projected cost, savings ($ and %), recorded average latency, and exclusions.
+Calls on models missing from the catalog are left out of the analysis and listed in
+`unknownModelsUsed`.
 
 ### Status codes
 
