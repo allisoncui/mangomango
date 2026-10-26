@@ -281,6 +281,13 @@ This repository contains no third-party source code; all code was written for th
 External libraries (e.g. Spring Boot, JUnit) are fetched by Maven at build time from the
 dependencies declared in `pom.xml` and `clients/usage-cli/pom.xml`.
 
+## Project management
+
+Tasks and who completed them are tracked on our Trello board:
+[mangomango](https://trello.com/invite/b/6adf900fd5c26d6acf0f3a22/ATTIe58929af2d5cdc0ac71d65c4c829023aA05699F5/mangomango),
+with columns Backlog, In Progress, In Review and Done. Each card is assigned to its owner and links
+to the pull request that completed it. Our mentor and instructor have been invited to the board.
+
 ## AI usage
 
 For this project, we used Claude Code to assist with code generation and troubleshooting.
