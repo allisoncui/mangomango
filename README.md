@@ -49,11 +49,11 @@ own tests; see [`clients/usage-cli`](clients/usage-cli).
 
 ### Reports for the `t2-iteration-1` release
 
-Generated from the tagged commit's source with `mvn verify checkstyle:checkstyle` (87 tests, 0 failures):
+Generated from the tagged commit's source with `mvn verify checkstyle:checkstyle` (93 tests, 0 failures):
 
 - **Checkstyle** (Google Java Style, Checkstyle 10.26.1, main + test code): **clean, 0 violations**.
   Report: [`reports/checkstyle-result.xml`](reports/checkstyle-result.xml).
-- **Branch coverage (JaCoCo): 84.5%** (213 of 252 branches); 839 of 884 lines (94.9%).
+- **Branch coverage (JaCoCo): 86.1%** (217 of 252 branches); 854 of 884 lines (96.6%).
   Report: [`reports/jacoco/index.html`](reports/jacoco/index.html) (also `jacoco.csv` / `jacoco.xml`).
 
 ## API

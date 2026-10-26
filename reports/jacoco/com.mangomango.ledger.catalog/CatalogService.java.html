@@ -108,7 +108,7 @@ public class CatalogService {
   @Transactional(readOnly = true)
   public ModelPrice activeModel(ModelKey key) {
 <span class="fc" id="L110">    return priceAt(key, clock.instant())</span>
-<span class="pc" id="L111">        .orElseThrow(() -&gt; new NotFoundException(&quot;No active catalog entry for &quot; + key));</span>
+<span class="fc" id="L111">        .orElseThrow(() -&gt; new NotFoundException(&quot;No active catalog entry for &quot; + key));</span>
   }
 
   /** Returns every stored version of one model, oldest first. */
@@ -116,8 +116,8 @@ public class CatalogService {
   public List&lt;ModelPrice&gt; history(ModelKey key) {
 <span class="fc" id="L117">    List&lt;ModelPrice&gt; versions =</span>
 <span class="fc" id="L118">        repository.findByProviderAndModelIdOrderByVersionAsc(key.provider(), key.modelId());</span>
-<span class="pc bpc" id="L119" title="1 of 2 branches missed.">    if (versions.isEmpty()) {</span>
-<span class="nc" id="L120">      throw new NotFoundException(&quot;Model &quot; + key + &quot; is not in the catalog&quot;);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">    if (versions.isEmpty()) {</span>
+<span class="fc" id="L120">      throw new NotFoundException(&quot;Model &quot; + key + &quot; is not in the catalog&quot;);</span>
     }
 <span class="fc" id="L122">    return versions;</span>
   }
