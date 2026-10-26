@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecommendationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.recommendation</a> &gt; <span class="el_source">RecommendationService.java</span></div><h1>RecommendationService.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.recommendation;
+
+import com.mangomango.ledger.budget.BudgetService;
+import com.mangomango.ledger.budget.BudgetStatus;
+import com.mangomango.ledger.catalog.CatalogService;
+import com.mangomango.ledger.catalog.CostCalculator;
+import com.mangomango.ledger.catalog.ModelKey;
+import com.mangomango.ledger.catalog.ModelPrice;
+import com.mangomango.ledger.common.LedgerProperties;
+import com.mangomango.ledger.metrics.GroupBy;
+import com.mangomango.ledger.metrics.UsageStats;
+import com.mangomango.ledger.usage.UsageEventRepository;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Operation 3: Evaluate Endpoint Routing &amp;amp; Recommendation. */
+@Service
+public class RecommendationService {
+
+  static final long DEFAULT_OUTPUT_TOKENS = 500;
+  static final int MAX_TIER = 5;
+  /** Score given to latency or reliability when the client has no history for a model. */
+  static final double NO_HISTORY_SCORE = 0.5;
+  /** Extra cost weight applied when the client is past a budget alert threshold. */
+  static final double BUDGET_PRESSURE_BOOST = 0.3;
+
+  private static final String COST = &quot;cost&quot;;
+  private static final String LATENCY = &quot;latency&quot;;
+  private static final String CAPABILITY = &quot;capability&quot;;
+  private static final String RELIABILITY = &quot;reliability&quot;;
+
+  private final CatalogService catalogService;
+  private final BudgetService budgetService;
+  private final UsageEventRepository usageRepository;
+  private final LedgerProperties properties;
+  private final Clock clock;
+
+  /** Creates the service. */
+  public RecommendationService(
+      CatalogService catalogService,
+      BudgetService budgetService,
+      UsageEventRepository usageRepository,
+      LedgerProperties properties,
+<span class="fc" id="L56">      Clock clock) {</span>
+<span class="fc" id="L57">    this.catalogService = catalogService;</span>
+<span class="fc" id="L58">    this.budgetService = budgetService;</span>
+<span class="fc" id="L59">    this.usageRepository = usageRepository;</span>
+<span class="fc" id="L60">    this.properties = properties;</span>
+<span class="fc" id="L61">    this.clock = clock;</span>
+<span class="fc" id="L62">  }</span>
+
+  /** Scores every catalog model against the request and the client's recorded history. */
+  @Transactional(readOnly = true)
+  public RecommendationResponse recommend(String clientId, RecommendationRequest request) {
+    long outputTokens =
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        request.expectedOutputTokens() == null</span>
+<span class="fc" id="L69">            ? DEFAULT_OUTPUT_TOKENS</span>
+<span class="fc" id="L70">            : request.expectedOutputTokens();</span>
+<span class="fc" id="L71">    long requiredContext =</span>
+<span class="fc" id="L72">        Math.max(</span>
+<span class="fc" id="L73">            request.estimatedPromptTokens() + outputTokens,</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            request.minContextWindow() == null ? 0 : request.minContextWindow());</span>
+<span class="fc" id="L75">    int minTier = minimumTier(request);</span>
+
+<span class="fc" id="L77">    Instant now = clock.instant();</span>
+<span class="fc" id="L78">    Map&lt;String, UsageStats&gt; history =</span>
+        usageRepository
+<span class="fc" id="L80">            .findInRange(</span>
+<span class="fc" id="L81">                clientId, now.minus(Duration.ofDays(properties.recommendationLookbackDays())), now)</span>
+<span class="fc" id="L82">            .stream()</span>
+<span class="fc" id="L83">            .collect(</span>
+<span class="fc" id="L84">                Collectors.groupingBy(</span>
+<span class="fc" id="L85">                    GroupBy.MODEL::keyOf,</span>
+<span class="fc" id="L86">                    Collectors.collectingAndThen(Collectors.toList(), UsageStats::of)));</span>
+
+<span class="fc" id="L88">    List&lt;RecommendationResponse.Exclusion&gt; excluded = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L89">    List&lt;Candidate&gt; candidates = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">    for (ModelPrice price : catalogService.activeModels()) {</span>
+<span class="fc" id="L91">      ModelKey key = price.key();</span>
+<span class="fc" id="L92">      UsageStats stats = history.get(key.toString());</span>
+<span class="fc" id="L93">      String reason = exclusionReason(price, stats, requiredContext, minTier, request);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">      if (reason != null) {</span>
+<span class="fc" id="L95">        excluded.add(</span>
+<span class="fc" id="L96">            new RecommendationResponse.Exclusion(key.provider(), key.modelId(), reason));</span>
+<span class="fc" id="L97">        continue;</span>
+      }
+<span class="fc" id="L99">      BigDecimal cost =</span>
+<span class="fc" id="L100">          CostCalculator.cost(price, request.estimatedPromptTokens(), 0, outputTokens);</span>
+<span class="fc" id="L101">      candidates.add(new Candidate(price, cost, stats));</span>
+<span class="fc" id="L102">    }</span>
+
+<span class="fc" id="L104">    boolean budgetPressure =</span>
+<span class="fc" id="L105">        budgetService.statusesForClient(clientId).stream()</span>
+<span class="fc" id="L106">            .anyMatch(BudgetStatus::anyThresholdCrossed);</span>
+    Optimization optimization =
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        request.optimizeFor() == null ? Optimization.LOWEST_COST : request.optimizeFor();</span>
+<span class="fc" id="L109">    Map&lt;String, Double&gt; weights = weights(optimization, budgetPressure);</span>
+<span class="fc" id="L110">    List&lt;RecommendationResponse.Option&gt; ranked = score(candidates, weights);</span>
+
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">    RecommendationResponse.Option best = ranked.isEmpty() ? null : ranked.get(0);</span>
+    RecommendationResponse.Option fallback =
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        best == null</span>
+<span class="nc" id="L115">            ? null</span>
+<span class="fc" id="L116">            : ranked.stream()</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                .filter(o -&gt; !o.provider().equals(best.provider()))</span>
+<span class="fc" id="L118">                .findFirst()</span>
+<span class="fc" id="L119">                .orElse(null);</span>
+<span class="fc" id="L120">    return new RecommendationResponse(</span>
+        best, fallback, budgetPressure, weights, ranked, excluded);
+  }
+
+  private static int minimumTier(RecommendationRequest request) {
+    int fromComplexity =
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        request.taskComplexity() == null ? 1 : request.taskComplexity().minimumTier();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">    int explicit = request.minCapabilityTier() == null ? 1 : request.minCapabilityTier();</span>
+<span class="fc" id="L128">    return Math.max(fromComplexity, explicit);</span>
+  }
+
+  private static String exclusionReason(
+      ModelPrice price,
+      UsageStats stats,
+      long requiredContext,
+      int minTier,
+      RecommendationRequest request) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">    if (price.getContextWindow() &lt; requiredContext) {</span>
+<span class="fc" id="L138">      return &quot;context window &quot; + price.getContextWindow() + &quot; &lt; required &quot; + requiredContext;</span>
+    }
+<span class="fc bfc" id="L140" title="All 2 branches covered.">    if (price.getCapabilityTier() &lt; minTier) {</span>
+<span class="fc" id="L141">      return &quot;capability tier &quot; + price.getCapabilityTier() + &quot; &lt; required &quot; + minTier;</span>
+    }
+<span class="fc bfc" id="L143" title="All 4 branches covered.">    if (request.maxLatencyMs() != null</span>
+        &amp;&amp; stats != null
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        &amp;&amp; stats.averageLatencyMs() != null</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        &amp;&amp; stats.averageLatencyMs() &gt; request.maxLatencyMs()) {</span>
+<span class="fc" id="L147">      return String.format(</span>
+          &quot;recorded average latency %.0f ms &gt; tolerance %d ms&quot;,
+<span class="fc" id="L149">          stats.averageLatencyMs(), request.maxLatencyMs());</span>
+    }
+<span class="fc" id="L151">    return null;</span>
+  }
+
+  /** Returns normalized component weights for a preference, shifted toward cost if needed. */
+  static Map&lt;String, Double&gt; weights(Optimization optimization, boolean budgetPressure) {
+<span class="fc" id="L156">    double[] w =</span>
+<span class="pc bpc" id="L157" title="1 of 3 branches missed.">        switch (optimization) {</span>
+<span class="fc" id="L158">          case LOWEST_COST -&gt; new double[] {0.6, 0.15, 0.1, 0.15};</span>
+<span class="nc" id="L159">          case LOWEST_LATENCY -&gt; new double[] {0.15, 0.6, 0.1, 0.15};</span>
+<span class="fc" id="L160">          case HIGHEST_CAPABILITY -&gt; new double[] {0.15, 0.1, 0.6, 0.15};</span>
+        };
+<span class="fc bfc" id="L162" title="All 2 branches covered.">    if (budgetPressure) {</span>
+<span class="fc" id="L163">      w[0] += BUDGET_PRESSURE_BOOST;</span>
+    }
+<span class="fc" id="L165">    double sum = w[0] + w[1] + w[2] + w[3];</span>
+<span class="fc" id="L166">    Map&lt;String, Double&gt; weights = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L167">    weights.put(COST, round(w[0] / sum));</span>
+<span class="fc" id="L168">    weights.put(LATENCY, round(w[1] / sum));</span>
+<span class="fc" id="L169">    weights.put(CAPABILITY, round(w[2] / sum));</span>
+<span class="fc" id="L170">    weights.put(RELIABILITY, round(w[3] / sum));</span>
+<span class="fc" id="L171">    return weights;</span>
+  }
+
+  static List&lt;RecommendationResponse.Option&gt; score(
+      List&lt;Candidate&gt; candidates, Map&lt;String, Double&gt; weights) {
+<span class="fc" id="L176">    BigDecimal minCost =</span>
+<span class="fc" id="L177">        candidates.stream().map(Candidate::cost).min(Comparator.naturalOrder()).orElse(null);</span>
+<span class="fc" id="L178">    double minLatency =</span>
+<span class="fc" id="L179">        candidates.stream()</span>
+<span class="fc" id="L180">            .map(Candidate::stats)</span>
+<span class="pc bpc" id="L181" title="3 of 4 branches missed.">            .filter(s -&gt; s != null &amp;&amp; s.averageLatencyMs() != null)</span>
+<span class="fc" id="L182">            .mapToDouble(UsageStats::averageLatencyMs)</span>
+<span class="fc" id="L183">            .min()</span>
+<span class="fc" id="L184">            .orElse(0);</span>
+
+<span class="fc" id="L186">    List&lt;RecommendationResponse.Option&gt; options = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">    for (Candidate c : candidates) {</span>
+<span class="fc" id="L188">      Map&lt;String, Double&gt; parts = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L189">      parts.put(COST, round(ratio(minCost, c.cost())));</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">      Double latency = c.stats() == null ? null : c.stats().averageLatencyMs();</span>
+<span class="fc" id="L191">      parts.put(</span>
+          LATENCY,
+<span class="fc" id="L193">          round(</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">              latency == null</span>
+<span class="fc" id="L195">                  ? NO_HISTORY_SCORE</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">                  : latency &lt;= 0 ? 1.0 : Math.min(1.0, Math.max(minLatency, 1) / latency)));</span>
+<span class="fc" id="L197">      parts.put(CAPABILITY, round((double) c.price().getCapabilityTier() / MAX_TIER));</span>
+<span class="fc" id="L198">      parts.put(</span>
+          RELIABILITY,
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">          round(c.stats() == null ? NO_HISTORY_SCORE : 1.0 - c.stats().errorRate()));</span>
+<span class="fc" id="L201">      double total =</span>
+<span class="fc" id="L202">          parts.entrySet().stream().mapToDouble(e -&gt; e.getValue() * weights.get(e.getKey())).sum();</span>
+<span class="fc" id="L203">      options.add(</span>
+          new RecommendationResponse.Option(
+<span class="fc" id="L205">              c.price().getProvider(),</span>
+<span class="fc" id="L206">              c.price().getModelId(),</span>
+<span class="fc" id="L207">              c.price().getCapabilityTier(),</span>
+<span class="fc" id="L208">              c.price().getContextWindow(),</span>
+<span class="fc" id="L209">              c.cost(),</span>
+              latency,
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">              c.stats() == null ? null : c.stats().errorRate(),</span>
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">              c.stats() == null ? 0 : c.stats().requestCount(),</span>
+<span class="fc" id="L213">              round(total),</span>
+              parts));
+<span class="fc" id="L215">    }</span>
+<span class="fc" id="L216">    options.sort(</span>
+<span class="fc" id="L217">        Comparator.comparingDouble(RecommendationResponse.Option::score)</span>
+<span class="fc" id="L218">            .reversed()</span>
+<span class="fc" id="L219">            .thenComparing(RecommendationResponse.Option::estimatedCost));</span>
+<span class="fc" id="L220">    return options;</span>
+  }
+
+  private static double ratio(BigDecimal min, BigDecimal value) {
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">    if (value.signum() == 0) {</span>
+<span class="nc" id="L225">      return 1.0;</span>
+    }
+<span class="fc" id="L227">    return min.doubleValue() / value.doubleValue();</span>
+  }
+
+  private static double round(double value) {
+<span class="fc" id="L231">    return Math.round(value * 10_000) / 10_000.0;</span>
+  }
+
+  /** A qualifying model with its estimated cost and recorded history (null if none). */
+<span class="fc" id="L235">  record Candidate(ModelPrice price, BigDecimal cost, UsageStats stats) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LogUsageRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.usage</a> &gt; <span class="el_source">LogUsageRequest.java</span></div><h1>LogUsageRequest.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.usage;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
+
+/**
+ * Request body for reporting one AI model call.
+ *
+ * @param provider provider name, e.g. {@code openai}
+ * @param modelId model identifier as listed in the catalog
+ * @param inputTokens total input tokens, including any cached input tokens
+ * @param outputTokens output tokens
+ * @param cachedInputTokens optional portion of input tokens served from cache
+ * @param idempotencyKey client-chosen key; a retried report with the same key is not re-counted
+ * @param requestTimestamp when the call was made; selects the price in effect
+ * @param latencyMs end-to-end latency of the call in milliseconds
+ * @param status whether the call succeeded
+ * @param projectTag optional project the spending is attributed to
+ */
+<span class="fc" id="L25">public record LogUsageRequest(</span>
+    @NotBlank String provider,
+    @NotBlank String modelId,
+    @NotNull @PositiveOrZero Long inputTokens,
+    @NotNull @PositiveOrZero Long outputTokens,
+    @PositiveOrZero Long cachedInputTokens,
+    @NotBlank @Size(max = 200) String idempotencyKey,
+    @NotNull Instant requestTimestamp,
+    @NotNull @PositiveOrZero Long latencyMs,
+    @NotNull RequestStatus status,
+    @Size(max = 100) String projectTag) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

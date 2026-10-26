@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsageStats.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.metrics</a> &gt; <span class="el_source">UsageStats.java</span></div><h1>UsageStats.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.metrics;
+
+import com.mangomango.ledger.common.Money;
+import com.mangomango.ledger.usage.UsageEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.Collection;
+
+/**
+ * Aggregate statistics over a set of usage events.
+ *
+ * @param requestCount number of calls
+ * @param inputTokens total input tokens
+ * @param outputTokens total output tokens
+ * @param cachedInputTokens total cached input tokens
+ * @param totalTokens input plus output tokens
+ * @param totalCost total dollar cost
+ * @param averageCostPerRequest mean cost per call
+ * @param averageTokensPerRequest mean input plus output tokens per call
+ * @param errorRate fraction of calls with ERROR status, 0 to 1
+ * @param averageLatencyMs mean latency, or null when there are no calls
+ * @param p95LatencyMs 95th-percentile latency (nearest rank), or null when there are no calls
+ */
+<span class="fc" id="L27">public record UsageStats(</span>
+    long requestCount,
+    long inputTokens,
+    long outputTokens,
+    long cachedInputTokens,
+    long totalTokens,
+    BigDecimal totalCost,
+    BigDecimal averageCostPerRequest,
+    double averageTokensPerRequest,
+    double errorRate,
+    Double averageLatencyMs,
+    Long p95LatencyMs) {
+
+  /** Computes statistics over {@code events}. */
+  public static UsageStats of(Collection&lt;UsageEvent&gt; events) {
+<span class="fc" id="L42">    long count = events.size();</span>
+<span class="fc" id="L43">    long input = 0;</span>
+<span class="fc" id="L44">    long output = 0;</span>
+<span class="fc" id="L45">    long cached = 0;</span>
+<span class="fc" id="L46">    long errors = 0;</span>
+<span class="fc" id="L47">    BigDecimal cost = BigDecimal.ZERO;</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">    for (UsageEvent e : events) {</span>
+<span class="fc" id="L49">      input += e.getInputTokens();</span>
+<span class="fc" id="L50">      output += e.getOutputTokens();</span>
+<span class="fc" id="L51">      cached += e.getCachedInputTokens();</span>
+<span class="fc" id="L52">      cost = cost.add(e.getCost());</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">      if (e.isError()) {</span>
+<span class="fc" id="L54">        errors++;</span>
+      }
+<span class="fc" id="L56">    }</span>
+<span class="fc" id="L57">    long[] latencies = events.stream().mapToLong(UsageEvent::getLatencyMs).sorted().toArray();</span>
+<span class="fc" id="L58">    return new UsageStats(</span>
+        count,
+        input,
+        output,
+        cached,
+        input + output,
+<span class="fc" id="L64">        Money.round(cost),</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        count == 0</span>
+<span class="fc" id="L66">            ? Money.round(BigDecimal.ZERO)</span>
+<span class="fc" id="L67">            : cost.divide(BigDecimal.valueOf(count), Money.SCALE, RoundingMode.HALF_UP),</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        count == 0 ? 0 : (double) (input + output) / count,</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        count == 0 ? 0 : (double) errors / count,</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        count == 0 ? null : Arrays.stream(latencies).average().orElse(0),</span>
+<span class="fc" id="L71">        percentile(latencies, 95));</span>
+  }
+
+  /** Nearest-rank percentile of an ascending array; null when empty. */
+  static Long percentile(long[] sortedAscending, int percentile) {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">    if (sortedAscending.length == 0) {</span>
+<span class="fc" id="L77">      return null;</span>
+    }
+<span class="fc" id="L79">    int rank = (int) Math.ceil(percentile / 100.0 * sortedAscending.length);</span>
+<span class="fc" id="L80">    return sortedAscending[Math.max(rank, 1) - 1];</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

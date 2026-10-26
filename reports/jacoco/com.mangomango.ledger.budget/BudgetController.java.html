@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetController.java</span></div><h1>BudgetController.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import com.mangomango.ledger.common.ClientHeader;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/** Operation 4: Manage Budget &amp;amp; Alert Rules. */
+@RestController
+@RequestMapping(&quot;/api/v1/budgets&quot;)
+public class BudgetController {
+
+  private final BudgetService budgetService;
+
+  /** Creates the controller. */
+<span class="fc" id="L29">  public BudgetController(BudgetService budgetService) {</span>
+<span class="fc" id="L30">    this.budgetService = budgetService;</span>
+<span class="fc" id="L31">  }</span>
+
+  /** Creates a rule. */
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public BudgetRuleResponse create(
+      @RequestHeader(ClientHeader.NAME) String clientId,
+      @Valid @RequestBody BudgetRuleRequest request) {
+<span class="fc" id="L39">    return budgetService.create(clientId, request);</span>
+  }
+
+  /** Replaces a rule. */
+  @PutMapping(&quot;/{ruleId}&quot;)
+  public BudgetRuleResponse update(
+      @RequestHeader(ClientHeader.NAME) String clientId,
+      @PathVariable UUID ruleId,
+      @Valid @RequestBody BudgetRuleRequest request) {
+<span class="nc" id="L48">    return budgetService.update(clientId, ruleId, request);</span>
+  }
+
+  /** Lists the client's rules. */
+  @GetMapping
+  public List&lt;BudgetRuleResponse&gt; list(@RequestHeader(ClientHeader.NAME) String clientId) {
+<span class="nc" id="L54">    return budgetService.list(clientId);</span>
+  }
+
+  /** Returns one rule. */
+  @GetMapping(&quot;/{ruleId}&quot;)
+  public BudgetRuleResponse get(
+      @RequestHeader(ClientHeader.NAME) String clientId, @PathVariable UUID ruleId) {
+<span class="fc" id="L61">    return budgetService.get(clientId, ruleId);</span>
+  }
+
+  /** Deletes one rule. */
+  @DeleteMapping(&quot;/{ruleId}&quot;)
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(
+      @RequestHeader(ClientHeader.NAME) String clientId, @PathVariable UUID ruleId) {
+<span class="fc" id="L69">    budgetService.delete(clientId, ruleId);</span>
+<span class="fc" id="L70">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

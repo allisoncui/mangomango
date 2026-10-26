@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Granularity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.metrics</a> &gt; <span class="el_source">Granularity.java</span></div><h1>Granularity.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.metrics;
+
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+
+/** Time-series bucket size. Buckets are aligned in UTC. */
+<span class="fc" id="L11">public enum Granularity {</span>
+<span class="fc" id="L12">  HOURLY,</span>
+<span class="fc" id="L13">  DAILY,</span>
+<span class="fc" id="L14">  MONTHLY;</span>
+
+  /** Returns the start of the bucket containing {@code at}. */
+  public Instant bucketStart(Instant at) {
+<span class="fc" id="L18">    ZonedDateTime t = at.atZone(ZoneOffset.UTC);</span>
+<span class="fc bfc" id="L19" title="All 3 branches covered.">    return switch (this) {</span>
+<span class="fc" id="L20">      case HOURLY -&gt; t.truncatedTo(ChronoUnit.HOURS).toInstant();</span>
+<span class="fc" id="L21">      case DAILY -&gt; t.truncatedTo(ChronoUnit.DAYS).toInstant();</span>
+<span class="fc" id="L22">      case MONTHLY -&gt; t.truncatedTo(ChronoUnit.DAYS).withDayOfMonth(1).toInstant();</span>
+    };
+  }
+
+  /** Returns the start of the bucket after the one starting at {@code bucketStart}. */
+  public Instant next(Instant bucketStart) {
+<span class="fc" id="L28">    ZonedDateTime t = bucketStart.atZone(ZoneOffset.UTC);</span>
+<span class="fc bfc" id="L29" title="All 3 branches covered.">    return switch (this) {</span>
+<span class="fc" id="L30">      case HOURLY -&gt; t.plusHours(1).toInstant();</span>
+<span class="fc" id="L31">      case DAILY -&gt; t.plusDays(1).toInstant();</span>
+<span class="fc" id="L32">      case MONTHLY -&gt; t.plusMonths(1).toInstant();</span>
+    };
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

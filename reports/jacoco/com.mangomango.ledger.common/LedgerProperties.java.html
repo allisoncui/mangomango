@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LedgerProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.common</a> &gt; <span class="el_source">LedgerProperties.java</span></div><h1>LedgerProperties.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.common;
+
+import java.util.Set;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+/**
+ * Service configuration bound from {@code ledger.*} properties.
+ *
+ * @param adminClients client IDs allowed to write to the model catalog
+ * @param seedCatalog whether to load sample catalog entries on startup
+ * @param recommendationLookbackDays days of history used for routing statistics
+ */
+@ConfigurationProperties(prefix = &quot;ledger&quot;)
+public record LedgerProperties(
+    Set&lt;String&gt; adminClients, boolean seedCatalog, int recommendationLookbackDays) {
+
+  /** Applies defaults for unset properties. */
+<span class="fc" id="L20">  public LedgerProperties {</span>
+<span class="pc bpc" id="L21" title="1 of 2 branches missed.">    adminClients = adminClients == null ? Set.of() : Set.copyOf(adminClients);</span>
+    recommendationLookbackDays =
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        recommendationLookbackDays &lt;= 0 ? 30 : recommendationLookbackDays;</span>
+<span class="fc" id="L24">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

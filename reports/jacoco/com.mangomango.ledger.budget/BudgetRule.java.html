@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetRule.java</span></div><h1>BudgetRule.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/** A spending limit with alert thresholds, owned by one client. */
+@Entity
+@Table(name = &quot;budget_rule&quot;)
+public class BudgetRule {
+
+  @Id private UUID id;
+
+  @Column(name = &quot;client_id&quot;, nullable = false)
+  private String clientId;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private BudgetScope scope;
+
+  private String scopeValue;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private BudgetPeriod period;
+
+  @Column(nullable = false, precision = 19, scale = 6)
+  private BigDecimal limitAmount;
+
+<span class="fc" id="L45">  @ElementCollection(fetch = FetchType.EAGER)</span>
+  @CollectionTable(name = &quot;budget_rule_threshold&quot;, joinColumns = @JoinColumn(name = &quot;rule_id&quot;))
+  @OrderColumn(name = &quot;position&quot;)
+  @Column(name = &quot;threshold_percent&quot;)
+  private List&lt;Integer&gt; thresholds = new ArrayList&lt;&gt;();
+
+  private String callbackUrl;
+
+  @Column(nullable = false)
+  private Instant createdAt;
+
+  @Column(nullable = false)
+  private Instant updatedAt;
+
+  /** Required by JPA. */
+<span class="fc" id="L60">  protected BudgetRule() {}</span>
+
+  /** Creates a rule with a random ID. */
+<span class="fc" id="L63">  public BudgetRule(String clientId, Instant createdAt) {</span>
+<span class="fc" id="L64">    this.id = UUID.randomUUID();</span>
+<span class="fc" id="L65">    this.clientId = clientId;</span>
+<span class="fc" id="L66">    this.createdAt = createdAt;</span>
+<span class="fc" id="L67">    this.updatedAt = createdAt;</span>
+<span class="fc" id="L68">  }</span>
+
+  /** Replaces every editable field. */
+  public void update(
+      BudgetScope scope,
+      String scopeValue,
+      BudgetPeriod period,
+      BigDecimal limitAmount,
+      List&lt;Integer&gt; thresholds,
+      String callbackUrl,
+      Instant updatedAt) {
+<span class="fc" id="L79">    this.scope = scope;</span>
+<span class="fc" id="L80">    this.scopeValue = scopeValue;</span>
+<span class="fc" id="L81">    this.period = period;</span>
+<span class="fc" id="L82">    this.limitAmount = limitAmount;</span>
+<span class="fc" id="L83">    this.thresholds.clear();</span>
+<span class="fc" id="L84">    this.thresholds.addAll(thresholds);</span>
+<span class="fc" id="L85">    this.callbackUrl = callbackUrl;</span>
+<span class="fc" id="L86">    this.updatedAt = updatedAt;</span>
+<span class="fc" id="L87">  }</span>
+
+  public UUID getId() {
+<span class="fc" id="L90">    return id;</span>
+  }
+
+  public String getClientId() {
+<span class="fc" id="L94">    return clientId;</span>
+  }
+
+  public BudgetScope getScope() {
+<span class="fc" id="L98">    return scope;</span>
+  }
+
+  public String getScopeValue() {
+<span class="fc" id="L102">    return scopeValue;</span>
+  }
+
+  public BudgetPeriod getPeriod() {
+<span class="fc" id="L106">    return period;</span>
+  }
+
+  public BigDecimal getLimitAmount() {
+<span class="fc" id="L110">    return limitAmount;</span>
+  }
+
+  public List&lt;Integer&gt; getThresholds() {
+<span class="fc" id="L114">    return List.copyOf(thresholds);</span>
+  }
+
+  public String getCallbackUrl() {
+<span class="fc" id="L118">    return callbackUrl;</span>
+  }
+
+  public Instant getCreatedAt() {
+<span class="nc" id="L122">    return createdAt;</span>
+  }
+
+  public Instant getUpdatedAt() {
+<span class="nc" id="L126">    return updatedAt;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

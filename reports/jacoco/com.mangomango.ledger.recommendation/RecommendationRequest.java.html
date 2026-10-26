@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecommendationRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.recommendation</a> &gt; <span class="el_source">RecommendationRequest.java</span></div><h1>RecommendationRequest.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.recommendation;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+
+/**
+ * Requirements for a routing recommendation.
+ *
+ * @param estimatedPromptTokens expected input tokens of the upcoming call
+ * @param expectedOutputTokens expected output tokens; defaults to 500
+ * @param minContextWindow optional minimum context window
+ * @param taskComplexity optional difficulty, mapped to a minimum capability tier
+ * @param minCapabilityTier optional explicit minimum tier; overrides taskComplexity when higher
+ * @param maxLatencyMs optional latency tolerance; models with higher recorded average are excluded
+ * @param optimizeFor what to favor; defaults to LOWEST_COST
+ */
+<span class="fc" id="L21">public record RecommendationRequest(</span>
+    @NotNull @PositiveOrZero Long estimatedPromptTokens,
+    @PositiveOrZero Long expectedOutputTokens,
+    @PositiveOrZero Integer minContextWindow,
+    TaskComplexity taskComplexity,
+    @Min(1) @Max(5) Integer minCapabilityTier,
+    @PositiveOrZero Long maxLatencyMs,
+    Optimization optimizeFor) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

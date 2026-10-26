@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BudgetAlert.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.budget</a> &gt; <span class="el_source">BudgetAlert.java</span></div><h1>BudgetAlert.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.budget;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.Instant;
+import java.util.UUID;
+
+/** Records that a threshold already fired for a rule in a period, so it fires only once. */
+@Entity
+@Table(
+    name = &quot;budget_alert&quot;,
+    uniqueConstraints =
+        @UniqueConstraint(columnNames = {&quot;rule_id&quot;, &quot;period_start&quot;, &quot;threshold_percent&quot;}))
+public class BudgetAlert {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = &quot;rule_id&quot;, nullable = false)
+  private UUID ruleId;
+
+  @Column(name = &quot;period_start&quot;, nullable = false)
+  private Instant periodStart;
+
+  @Column(name = &quot;threshold_percent&quot;, nullable = false)
+  private int thresholdPercent;
+
+  @Column(nullable = false)
+  private Instant triggeredAt;
+
+  /** Required by JPA. */
+<span class="fc" id="L40">  protected BudgetAlert() {}</span>
+
+  /** Creates an alert record. */
+<span class="fc" id="L43">  public BudgetAlert(UUID ruleId, Instant periodStart, int thresholdPercent, Instant triggeredAt) {</span>
+<span class="fc" id="L44">    this.ruleId = ruleId;</span>
+<span class="fc" id="L45">    this.periodStart = periodStart;</span>
+<span class="fc" id="L46">    this.thresholdPercent = thresholdPercent;</span>
+<span class="fc" id="L47">    this.triggeredAt = triggeredAt;</span>
+<span class="fc" id="L48">  }</span>
+
+  public int getThresholdPercent() {
+<span class="fc" id="L51">    return thresholdPercent;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

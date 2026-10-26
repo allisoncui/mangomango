@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsageEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.usage</a> &gt; <span class="el_source">UsageEvent.java</span></div><h1>UsageEvent.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.usage;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+/** One priced AI model call reported by a client. */
+@Entity
+@Table(
+    name = &quot;usage_event&quot;,
+    uniqueConstraints = @UniqueConstraint(columnNames = {&quot;client_id&quot;, &quot;idempotency_key&quot;}),
+    indexes = @Index(columnList = &quot;client_id, request_timestamp&quot;))
+public class UsageEvent {
+
+  @Id private UUID id;
+
+  @Column(name = &quot;client_id&quot;, nullable = false)
+  private String clientId;
+
+  @Column(name = &quot;idempotency_key&quot;, nullable = false)
+  private String idempotencyKey;
+
+  @Column(nullable = false)
+  private String provider;
+
+  @Column(nullable = false)
+  private String modelId;
+
+  @Column(nullable = false)
+  private long inputTokens;
+
+  @Column(nullable = false)
+  private long outputTokens;
+
+  @Column(nullable = false)
+  private long cachedInputTokens;
+
+  @Column(nullable = false, precision = 19, scale = 6)
+  private BigDecimal cost;
+
+  @Column(nullable = false)
+  private int pricingVersion;
+
+  @Column(name = &quot;request_timestamp&quot;, nullable = false)
+  private Instant requestTimestamp;
+
+  @Column(nullable = false)
+  private long latencyMs;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private RequestStatus status;
+
+  private String projectTag;
+
+  @Column(nullable = false)
+  private Instant recordedAt;
+
+  /** Required by JPA. */
+<span class="fc" id="L70">  protected UsageEvent() {}</span>
+
+  /** Creates a new event with a random ID. */
+  public UsageEvent(
+      String clientId,
+      String idempotencyKey,
+      String provider,
+      String modelId,
+      long inputTokens,
+      long outputTokens,
+      long cachedInputTokens,
+      BigDecimal cost,
+      int pricingVersion,
+      Instant requestTimestamp,
+      long latencyMs,
+      RequestStatus status,
+      String projectTag,
+<span class="fc" id="L87">      Instant recordedAt) {</span>
+<span class="fc" id="L88">    this.id = UUID.randomUUID();</span>
+<span class="fc" id="L89">    this.clientId = clientId;</span>
+<span class="fc" id="L90">    this.idempotencyKey = idempotencyKey;</span>
+<span class="fc" id="L91">    this.provider = provider;</span>
+<span class="fc" id="L92">    this.modelId = modelId;</span>
+<span class="fc" id="L93">    this.inputTokens = inputTokens;</span>
+<span class="fc" id="L94">    this.outputTokens = outputTokens;</span>
+<span class="fc" id="L95">    this.cachedInputTokens = cachedInputTokens;</span>
+<span class="fc" id="L96">    this.cost = cost;</span>
+<span class="fc" id="L97">    this.pricingVersion = pricingVersion;</span>
+<span class="fc" id="L98">    this.requestTimestamp = requestTimestamp;</span>
+<span class="fc" id="L99">    this.latencyMs = latencyMs;</span>
+<span class="fc" id="L100">    this.status = status;</span>
+<span class="fc" id="L101">    this.projectTag = projectTag;</span>
+<span class="fc" id="L102">    this.recordedAt = recordedAt;</span>
+<span class="fc" id="L103">  }</span>
+
+  public UUID getId() {
+<span class="fc" id="L106">    return id;</span>
+  }
+
+  public String getClientId() {
+<span class="fc" id="L110">    return clientId;</span>
+  }
+
+  public String getIdempotencyKey() {
+<span class="nc" id="L114">    return idempotencyKey;</span>
+  }
+
+  public String getProvider() {
+<span class="fc" id="L118">    return provider;</span>
+  }
+
+  public String getModelId() {
+<span class="fc" id="L122">    return modelId;</span>
+  }
+
+  public long getInputTokens() {
+<span class="fc" id="L126">    return inputTokens;</span>
+  }
+
+  public long getOutputTokens() {
+<span class="fc" id="L130">    return outputTokens;</span>
+  }
+
+  public long getCachedInputTokens() {
+<span class="fc" id="L134">    return cachedInputTokens;</span>
+  }
+
+  /** Returns input plus output tokens. */
+  public long totalTokens() {
+<span class="fc" id="L139">    return inputTokens + outputTokens;</span>
+  }
+
+  public BigDecimal getCost() {
+<span class="fc" id="L143">    return cost;</span>
+  }
+
+  public int getPricingVersion() {
+<span class="fc" id="L147">    return pricingVersion;</span>
+  }
+
+  public Instant getRequestTimestamp() {
+<span class="fc" id="L151">    return requestTimestamp;</span>
+  }
+
+  public long getLatencyMs() {
+<span class="fc" id="L155">    return latencyMs;</span>
+  }
+
+  public RequestStatus getStatus() {
+<span class="nc" id="L159">    return status;</span>
+  }
+
+  public boolean isError() {
+<span class="fc bfc" id="L163" title="All 2 branches covered.">    return status == RequestStatus.ERROR;</span>
+  }
+
+  public String getProjectTag() {
+<span class="fc" id="L167">    return projectTag;</span>
+  }
+
+  public Instant getRecordedAt() {
+<span class="fc" id="L171">    return recordedAt;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

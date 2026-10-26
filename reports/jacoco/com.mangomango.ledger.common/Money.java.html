@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Money.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.common</a> &gt; <span class="el_source">Money.java</span></div><h1>Money.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.common;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+/** Helpers for consistent monetary arithmetic. */
+public final class Money {
+
+  /** Scale used for stored and returned dollar amounts. */
+  public static final int SCALE = 6;
+
+<span class="fc" id="L14">  private static final BigDecimal ONE_MILLION = BigDecimal.valueOf(1_000_000L);</span>
+
+  private Money() {}
+
+  /** Returns the cost of {@code tokens} at {@code pricePerMillion} dollars per million tokens. */
+  public static BigDecimal tokenCost(long tokens, BigDecimal pricePerMillion) {
+<span class="fc" id="L20">    return BigDecimal.valueOf(tokens)</span>
+<span class="fc" id="L21">        .multiply(pricePerMillion)</span>
+<span class="fc" id="L22">        .divide(ONE_MILLION, SCALE, RoundingMode.HALF_UP);</span>
+  }
+
+  /** Rounds an amount to the standard money scale. */
+  public static BigDecimal round(BigDecimal amount) {
+<span class="fc" id="L27">    return amount.setScale(SCALE, RoundingMode.HALF_UP);</span>
+  }
+
+  /** Returns {@code part / whole * 100} rounded to two decimals, or zero when whole is zero. */
+  public static BigDecimal percent(BigDecimal part, BigDecimal whole) {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">    if (whole.signum() == 0) {</span>
+<span class="fc" id="L33">      return BigDecimal.ZERO.setScale(2);</span>
+    }
+<span class="fc" id="L35">    return part.multiply(BigDecimal.valueOf(100)).divide(whole, 2, RoundingMode.HALF_UP);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SavingsResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.savings</a> &gt; <span class="el_source">SavingsResponse.java</span></div><h1>SavingsResponse.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.savings;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Result of re-pricing recorded usage under alternative models.
+ *
+ * @param start range start
+ * @param end range end
+ * @param projectTag project filter, or null
+ * @param requestCount number of recorded calls analyzed
+ * @param actualCost what the recorded calls cost
+ * @param largestRequestTokens largest input plus output tokens of any one call
+ * @param highestCapabilityTierUsed highest capability tier among models actually used
+ * @param alternatives qualifying alternatives, cheapest first
+ * @param excluded alternatives that did not qualify, with reasons
+ * @param unknownModelsUsed models used in the range that are not in the catalog;
+ *                          their calls are left out of the analysis
+ *                          because their capability tier is unknown
+ */
+<span class="fc" id="L25">public record SavingsResponse(</span>
+    Instant start,
+    Instant end,
+    String projectTag,
+    long requestCount,
+    BigDecimal actualCost,
+    long largestRequestTokens,
+    int highestCapabilityTierUsed,
+    List&lt;Alternative&gt; alternatives,
+    List&lt;Excluded&gt; excluded,
+    List&lt;String&gt; unknownModelsUsed) {
+
+  /**
+   * One alternative model's projected cost.
+   *
+   * @param provider provider name
+   * @param modelId model identifier
+   * @param projectedCost cost of the same token volumes under this model
+   * @param savings actual minus projected cost; negative means more expensive
+   * @param savingsPercent savings as a percentage of actual cost
+   * @param averageLatencyMs client's recorded average latency for this model in the range, or
+   *     null
+   * @param currentlyUsed true if the client used this model in the range
+   * @param requestsPricedAtCurrentRate calls that predate this model's first price and were
+   *     priced at its current price instead
+   */
+<span class="fc" id="L51">  public record Alternative(</span>
+      String provider,
+      String modelId,
+      BigDecimal projectedCost,
+      BigDecimal savings,
+      BigDecimal savingsPercent,
+      Double averageLatencyMs,
+      boolean currentlyUsed,
+      long requestsPricedAtCurrentRate) {}
+
+  /**
+   * An alternative left out of the comparison.
+   *
+   * @param provider provider name
+   * @param modelId model identifier
+   * @param reason why it was excluded
+   */
+<span class="fc" id="L68">  public record Excluded(String provider, String modelId, String reason) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

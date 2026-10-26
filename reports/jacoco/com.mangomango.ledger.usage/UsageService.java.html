@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsageService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mangomango-ledger</a> &gt; <a href="index.source.html" class="el_package">com.mangomango.ledger.usage</a> &gt; <span class="el_source">UsageService.java</span></div><h1>UsageService.java</h1><pre class="source lang-java linenums">// Generated using Claude Code.
+
+package com.mangomango.ledger.usage;
+
+import com.mangomango.ledger.budget.BudgetService;
+import com.mangomango.ledger.budget.BudgetStatus;
+import com.mangomango.ledger.catalog.CatalogService;
+import com.mangomango.ledger.catalog.CostCalculator;
+import com.mangomango.ledger.catalog.ModelKey;
+import com.mangomango.ledger.catalog.ModelPrice;
+import com.mangomango.ledger.common.ConflictException;
+import com.mangomango.ledger.common.ValidationException;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Operation 1: Log Token Usage. */
+@Service
+public class UsageService {
+
+  /** How far in the future a request timestamp may be, to tolerate client clock skew. */
+<span class="fc" id="L27">  private static final Duration MAX_CLOCK_SKEW = Duration.ofMinutes(5);</span>
+
+  private final UsageEventRepository repository;
+  private final CatalogService catalogService;
+  private final BudgetService budgetService;
+  private final Clock clock;
+
+  /** Creates the service. */
+  public UsageService(
+      UsageEventRepository repository,
+      CatalogService catalogService,
+      BudgetService budgetService,
+<span class="fc" id="L39">      Clock clock) {</span>
+<span class="fc" id="L40">    this.repository = repository;</span>
+<span class="fc" id="L41">    this.catalogService = catalogService;</span>
+<span class="fc" id="L42">    this.budgetService = budgetService;</span>
+<span class="fc" id="L43">    this.clock = clock;</span>
+<span class="fc" id="L44">  }</span>
+
+  /**
+   * Prices and records one call, or returns the original record if the idempotency key was
+   * already used by this client for the same call.
+   *
+   * @throws ConflictException if the idempotency key was already used for a different call
+   */
+  @Transactional
+  public LogUsageResponse log(String clientId, LogUsageRequest request) {
+<span class="fc" id="L54">    Optional&lt;UsageEvent&gt; existing =</span>
+<span class="fc" id="L55">        repository.findByClientIdAndIdempotencyKey(clientId, request.idempotencyKey());</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    if (existing.isPresent()) {</span>
+<span class="fc" id="L57">      UsageEvent original = existing.get();</span>
+      // A reused key with different billable fields is a client bug, not a retry; replaying
+      // the original would silently drop the new call.
+<span class="fc bfc" id="L60" title="All 2 branches covered.">      if (!describesSameCall(original, request)) {</span>
+<span class="fc" id="L61">        throw new ConflictException(&quot;idempotencyKey '&quot; + request.idempotencyKey()</span>
+            + &quot;' was already used for a different call&quot;);
+      }
+<span class="fc" id="L64">      return response(original, true, budgetService.statusesFor(original));</span>
+    }
+
+<span class="fc" id="L67">    long cached = cachedTokens(request);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">    if (cached &gt; request.inputTokens()) {</span>
+<span class="fc" id="L69">      throw new ValidationException(&quot;cachedInputTokens cannot exceed inputTokens&quot;);</span>
+    }
+<span class="fc" id="L71">    Instant now = clock.instant();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">    if (request.requestTimestamp().isAfter(now.plus(MAX_CLOCK_SKEW))) {</span>
+<span class="fc" id="L73">      throw new ValidationException(&quot;requestTimestamp is in the future&quot;);</span>
+    }
+<span class="fc" id="L75">    ModelKey key = ModelKey.of(request.provider(), request.modelId());</span>
+<span class="fc" id="L76">    ModelPrice price = catalogService.requirePriceAt(key, request.requestTimestamp());</span>
+<span class="fc" id="L77">    BigDecimal cost =</span>
+<span class="fc" id="L78">        CostCalculator.cost(price, request.inputTokens(), cached, request.outputTokens());</span>
+<span class="fc" id="L79">    String project = blankToNull(request.projectTag());</span>
+
+<span class="fc" id="L81">    UsageEvent event =</span>
+<span class="fc" id="L82">        repository.save(</span>
+            new UsageEvent(
+                clientId,
+<span class="fc" id="L85">                request.idempotencyKey(),</span>
+<span class="fc" id="L86">                key.provider(),</span>
+<span class="fc" id="L87">                key.modelId(),</span>
+<span class="fc" id="L88">                request.inputTokens(),</span>
+<span class="fc" id="L89">                request.outputTokens(),</span>
+                cached,
+                cost,
+<span class="fc" id="L92">                price.getVersion(),</span>
+<span class="fc" id="L93">                request.requestTimestamp(),</span>
+<span class="fc" id="L94">                request.latencyMs(),</span>
+<span class="fc" id="L95">                request.status(),</span>
+                project,
+                now));
+<span class="fc" id="L98">    repository.flush();</span>
+<span class="fc" id="L99">    return response(event, false, budgetService.evaluateAfterUsage(event));</span>
+  }
+
+  private static LogUsageResponse response(
+      UsageEvent event, boolean replayed, List&lt;BudgetStatus&gt; budgets) {
+<span class="fc" id="L104">    return new LogUsageResponse(</span>
+<span class="fc" id="L105">        event.getId(),</span>
+        replayed,
+<span class="fc" id="L107">        event.getCost(),</span>
+<span class="fc" id="L108">        event.getPricingVersion(),</span>
+        budgets,
+<span class="fc" id="L110">        budgets.stream().anyMatch(BudgetStatus::anyThresholdCrossed),</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        budgets.stream().anyMatch(b -&gt; !b.newlyCrossedThresholds().isEmpty()));</span>
+  }
+
+  /**
+   * True when a retried request reports the same call as the stored record. Only the fields that
+   * determine cost are compared; latency, status and project tag may legitimately differ when a
+   * client re-sends a report.
+   */
+  private static boolean describesSameCall(UsageEvent event, LogUsageRequest request) {
+<span class="fc" id="L120">    ModelKey key = ModelKey.of(request.provider(), request.modelId());</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">    return event.getProvider().equals(key.provider())</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        &amp;&amp; event.getModelId().equals(key.modelId())</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        &amp;&amp; event.getInputTokens() == request.inputTokens()</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        &amp;&amp; event.getOutputTokens() == request.outputTokens()</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        &amp;&amp; event.getCachedInputTokens() == cachedTokens(request)</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        &amp;&amp; event.getRequestTimestamp().equals(request.requestTimestamp());</span>
+  }
+
+  private static long cachedTokens(LogUsageRequest request) {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">    return request.cachedInputTokens() == null ? 0 : request.cachedInputTokens();</span>
+  }
+
+  private static String blankToNull(String value) {
+<span class="fc bfc" id="L134" title="All 4 branches covered.">    return value == null || value.isBlank() ? null : value.trim();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
